@@ -17,7 +17,7 @@ public class PostCreateRequest {
     private String content;
 
     @Builder
-    public PostCreateRequest(String title, String content) {
+    private PostCreateRequest(String title, String content) {
         this.title = title;
         this.content = content;
     }

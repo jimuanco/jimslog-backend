@@ -7,3 +7,14 @@ include::{snippets}/post-create/request-fields.adoc[]
 
 ==== HTTP Response
 include::{snippets}/post-create/http-response.adoc[]
+
+[[post-inquiry]]
+=== 글 단건 조회
+
+==== HTTP Request
+include::{snippets}/post-inquiry/http-request.adoc[]
+include::{snippets}/post-inquiry/path-parameters.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-inquiry/http-response.adoc[]
+include::{snippets}/post-inquiry/response-fields.adoc[]
