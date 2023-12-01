@@ -11,6 +11,7 @@ import java.util.List;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
+@Table(name = "member")
 public class User {
 
     @Id
