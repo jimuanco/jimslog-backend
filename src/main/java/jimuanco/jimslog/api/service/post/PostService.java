@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PostService {
-    public void write(PostCreateServiceRequest serviceRequest) {
+    public void createPost(PostCreateServiceRequest serviceRequest) {
 
     }
 }

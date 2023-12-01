@@ -14,8 +14,8 @@ public class PostController {
 
     private final PostService postService;
 
-    @PostMapping("/posts")
-    public void post(@Valid @RequestBody PostCreateRequest request) {
-        postService.write(request.toServiceRequest());
+    @PostMapping("/posts/new")
+    public void createPost(@Valid @RequestBody PostCreateRequest request) {
+        postService.createPost(request.toServiceRequest());
     }
 }
