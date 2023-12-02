@@ -1,6 +1,5 @@
 package jimuanco.jimslog.api.service.post;
 
-import jimuanco.jimslog.api.DataResponse;
 import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
