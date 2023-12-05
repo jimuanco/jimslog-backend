@@ -36,7 +36,17 @@ include::{snippets}/posts-list/response-fields.adoc[]
 ==== HTTP Request
 include::{snippets}/post-edit/http-request.adoc[]
 include::{snippets}/post-edit/path-parameters.adoc[]
-include::{snippets}/post-create/request-fields.adoc[]
+include::{snippets}/post-edit/request-fields.adoc[]
 
 ==== HTTP Response
 include::{snippets}/post-edit/http-response.adoc[]
+
+[[post-delete]]
+=== 글 삭제
+
+==== HTTP Request
+include::{snippets}/post-delete/http-request.adoc[]
+include::{snippets}/post-delete/path-parameters.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-delete/http-response.adoc[]
