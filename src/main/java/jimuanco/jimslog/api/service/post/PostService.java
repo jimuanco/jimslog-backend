@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -31,7 +32,9 @@ public class PostService {
     }
 
     public List<PostResponse> getPostList(PostSearchServiceRequest serviceRequest) {
-        return null;
+        return postRepository.getPostList(serviceRequest).stream()
+                .map(PostResponse::of)
+                .collect(Collectors.toList());
     }
 
     public void editPost(Long postId, PostEditServiceRequest serviceRequest) {
