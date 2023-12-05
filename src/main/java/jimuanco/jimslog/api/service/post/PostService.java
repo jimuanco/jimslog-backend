@@ -4,14 +4,22 @@ import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
+import jimuanco.jimslog.domain.post.Post;
+import jimuanco.jimslog.domain.post.PostRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class PostService {
-    public void createPost(PostCreateServiceRequest serviceRequest) {
 
+    private final PostRepository postRepository;
+
+    public void createPost(PostCreateServiceRequest serviceRequest) {
+        Post post = serviceRequest.toEntity();
+        postRepository.save(post);
     }
 
     public PostResponse getPost(Long postId) {
