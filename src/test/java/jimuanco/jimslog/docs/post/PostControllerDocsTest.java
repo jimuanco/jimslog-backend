@@ -2,6 +2,7 @@ package jimuanco.jimslog.docs.post;
 
 import jimuanco.jimslog.api.controller.post.PostController;
 import jimuanco.jimslog.api.controller.post.request.PostCreateRequest;
+import jimuanco.jimslog.api.controller.post.request.PostEditRequest;
 import jimuanco.jimslog.api.service.post.PostService;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
@@ -21,8 +22,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.*;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.*;
@@ -144,5 +144,34 @@ class PostControllerDocsTest extends RestDocsSupport {
                         )
                 ));
 
+    }
+
+    @DisplayName("글을 수정하는 API")
+    @Test
+    void editPost() throws Exception {
+        Long postId = 1L;
+        PostEditRequest request = PostEditRequest.builder()
+                .title("글제목을 수정했습니다.")
+                .content("글내용을 수정했습니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andDo(document("post-edit",
+                        preprocessRequest(prettyPrint()),
+                        pathParameters(parameterWithName("postId")
+                                .description("글 ID")
+                        ),
+                        requestFields(
+                                fieldWithPath("title").type(JsonFieldType.STRING)
+                                        .description("글 제목"),
+                                fieldWithPath("content").type(JsonFieldType.STRING)
+                                        .description("글 내용")
+                        )
+                ));
     }
 }
