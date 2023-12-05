@@ -265,4 +265,16 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
                 .andExpect(jsonPath("$.validation.content").value("내용을 입력해주세요."));
     }
+
+    @DisplayName("글을 삭제한다.")
+    @Test
+    void deletePost() throws Exception {
+        // given
+        Long postId = 1L;
+
+        // when // then
+        mockMvc.perform(delete("/posts/{postId}", postId))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
 }

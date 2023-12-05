@@ -174,4 +174,19 @@ class PostControllerDocsTest extends RestDocsSupport {
                         )
                 ));
     }
+
+    @DisplayName("글을 삭제하는 API")
+    @Test
+    void deletePost() throws Exception {
+        Long postId = 1L;
+
+        mockMvc.perform(delete("/posts/{postId}", postId))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andDo(document("post-delete",
+                        pathParameters(parameterWithName("postId")
+                                .description("글 ID")
+                        )
+                ));
+    }
 }

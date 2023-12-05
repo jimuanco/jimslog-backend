@@ -25,4 +25,8 @@ public class PostService {
     public void editPost(Long postId, PostEditServiceRequest serviceRequest) {
 
     }
+
+    public void deletePost(Long postId) {
+
+    }
 }
