@@ -1,5 +1,6 @@
 package jimuanco.jimslog.api.service.post.response;
 
+import jimuanco.jimslog.domain.post.Post;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,5 +16,13 @@ public class PostResponse {
         this.id = id;
         this.title = title;
         this.content = content;
+    }
+
+    public static PostResponse of(Post post) {
+        return PostResponse.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .build();
     }
 }
