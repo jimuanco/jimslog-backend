@@ -2,6 +2,7 @@ package jimuanco.jimslog.api.controller.post;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jimuanco.jimslog.api.controller.post.request.PostCreateRequest;
+import jimuanco.jimslog.api.controller.post.request.PostEditRequest;
 import jimuanco.jimslog.api.service.post.PostService;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
@@ -20,8 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -203,5 +203,66 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data.length()").value(response.size()));
+    }
+
+    @DisplayName("글을 수정한다.")
+    @Test
+    void editPost() throws Exception {
+        // given
+        Long postId = 1L;
+        PostEditRequest request = PostEditRequest.builder()
+                .title("글제목을 수정했습니다.")
+                .content("글내용을 수정했습니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @DisplayName("글을 수정할때 제목은 필수값이다.")
+    @Test
+    void editPostWithoutTitle() throws Exception {
+        // given
+        Long postId = 1L;
+        PostCreateRequest request = PostCreateRequest.builder()
+                .content("글내용 입니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("400"))
+                .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
+                .andExpect(jsonPath("$.validation.title").value("제목을 입력해주세요."));
+    }
+
+    @DisplayName("글을 수정할때 내용은 필수값이다.")
+    @Test
+    void editPostWithoutContent() throws Exception {
+        // given
+        Long postId = 1L;
+        PostCreateRequest request = PostCreateRequest.builder()
+                .title("글제목 입니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("400"))
+                .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
+                .andExpect(jsonPath("$.validation.content").value("내용을 입력해주세요."));
     }
 }
