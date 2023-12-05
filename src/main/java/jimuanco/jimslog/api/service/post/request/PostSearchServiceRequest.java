@@ -1,10 +1,12 @@
 package jimuanco.jimslog.api.service.post.request;
 
 import lombok.Builder;
+import lombok.Getter;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+@Getter
 public class PostSearchServiceRequest {
 
     private static final int MAX_SIZE = 2000;
