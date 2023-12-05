@@ -6,6 +6,7 @@ import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import jimuanco.jimslog.domain.post.Post;
 import jimuanco.jimslog.domain.post.PostRepository;
+import jimuanco.jimslog.exception.PostNotFound;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,10 @@ public class PostService {
     }
 
     public PostResponse getPost(Long postId) {
-        return null;
+        Post post = postRepository.findById(postId)
+                .orElseThrow(PostNotFound::new);
+
+        return PostResponse.of(post);
     }
 
     public List<PostResponse> getPostList(PostSearchServiceRequest serviceRequest) {
