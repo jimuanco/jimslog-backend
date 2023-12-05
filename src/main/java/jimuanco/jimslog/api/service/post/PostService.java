@@ -1,6 +1,7 @@
 package jimuanco.jimslog.api.service.post;
 
 import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
+import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import org.springframework.stereotype.Service;
@@ -19,5 +20,9 @@ public class PostService {
 
     public List<PostResponse> getPostList(PostSearchServiceRequest serviceRequest) {
         return null;
+    }
+
+    public void editPost(Long postId, PostEditServiceRequest serviceRequest) {
+
     }
 }
