@@ -1,7 +1,9 @@
 package jimuanco.jimslog.api.service.post.request;
 
 import lombok.Builder;
+import lombok.Getter;
 
+@Getter
 public class PostEditServiceRequest {
 
     private String title;

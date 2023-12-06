@@ -1,6 +1,8 @@
 package jimuanco.jimslog.api.service.post;
 
+import jakarta.persistence.EntityManager;
 import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
+import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import jimuanco.jimslog.domain.post.Post;
@@ -15,11 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
 @SpringBootTest
 class PostServiceTest {
+
+    @Autowired
+    private EntityManager em;
 
     @Autowired
     private PostService postService;
@@ -118,5 +122,99 @@ class PostServiceTest {
                         tuple("글제목2", "글내용2"),
                         tuple("글제목1", "글내용1")
                 );
+    }
+
+    @DisplayName("글 제목을 수정한다.")
+    @Test
+    void editPostTitle() {
+        // given
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .build();
+        postRepository.save(post);
+
+        em.flush(); // todo @Transactional 대신 tearDown() 쓸지 고민
+        em.clear();
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 수정")
+                .content("글내용")
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        em.flush();
+        em.clear();
+
+        // then
+        Post editedPost = postRepository.findById(post.getId())
+                .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
+        assertThat(editedPost.getTitle()).isEqualTo("글제목 수정");
+        assertThat(editedPost.getContent()).isEqualTo("글내용");
+    }
+
+    @DisplayName("글 내용을 수정한다.")
+    @Test
+    void editPostContent() {
+        // given
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .build();
+        postRepository.save(post);
+
+        em.flush(); // todo @Transactional 대신 tearDown() 쓸지 고민
+        em.clear();
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목")
+                .content("글내용 수정")
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        em.flush();
+        em.clear();
+
+        // then
+        Post editedPost = postRepository.findById(post.getId())
+                .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
+        assertThat(editedPost.getTitle()).isEqualTo("글제목");
+        assertThat(editedPost.getContent()).isEqualTo("글내용 수정");
+    }
+
+    @DisplayName("존재하지 않는 글ID의 글을 수정할 시 예외가 발생한다.")
+    @Test
+    void editPostByNonExistingId() {
+        // given
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .build();
+        postRepository.save(post);
+
+        em.flush(); // todo @Transactional 대신 tearDown() 쓸지 고민
+        em.clear();
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 수정")
+                .content("글내용 수정")
+                .build();
+
+        // when // then
+        assertThatThrownBy(() -> postService.editPost(post.getId() + 1, request))
+                .isInstanceOf(PostNotFound.class)
+                .hasMessage("존재하지 않는 글입니다.");
+
+        em.flush();
+        em.clear();
+
+        Post editedPost = postRepository.findById(post.getId())
+                .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
+        assertThat(editedPost.getTitle()).isEqualTo("글제목");
+        assertThat(editedPost.getContent()).isEqualTo("글내용");
     }
 }

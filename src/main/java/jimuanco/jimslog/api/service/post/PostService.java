@@ -9,10 +9,12 @@ import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.PostNotFound;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Service
 public class PostService {
@@ -37,8 +39,12 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void editPost(Long postId, PostEditServiceRequest serviceRequest) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(PostNotFound::new);
 
+        post.edit(serviceRequest.getTitle(), serviceRequest.getContent()); // todo editor class 만들지 고민
     }
 
     public void deletePost(Long postId) {
