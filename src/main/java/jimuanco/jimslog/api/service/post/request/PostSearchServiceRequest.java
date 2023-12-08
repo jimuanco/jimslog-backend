@@ -14,7 +14,7 @@ public class PostSearchServiceRequest {
     private int size;
 
     @Builder
-    public PostSearchServiceRequest(int page, int size) {
+    private PostSearchServiceRequest(int page, int size) {
         this.page = page;
         this.size = size;
     }

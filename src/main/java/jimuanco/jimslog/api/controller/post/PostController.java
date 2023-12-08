@@ -18,7 +18,7 @@ public class PostController {
 
     private final PostService postService;
 
-    @PostMapping("/posts/new")
+    @PostMapping("/posts")
     public void createPost(@Valid @RequestBody PostCreateRequest postCreateRequest) {
         postService.createPost(postCreateRequest.toServiceRequest());
     }
@@ -35,7 +35,7 @@ public class PostController {
 
     @PatchMapping("/posts/{postId}")
     public void editPost(@PathVariable(name = "postId") Long postId,
-                         @RequestBody @Valid PostEditRequest postEditRequest) {
+                         @Valid @RequestBody PostEditRequest postEditRequest) {
         postService.editPost(postId, postEditRequest.toServiceRequest());
     }
 
