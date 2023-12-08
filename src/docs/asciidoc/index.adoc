@@ -13,3 +13,8 @@ endif::[]
 == Post API
 
 include::api/post/post.adoc[]
+
+[[Auth-API]]
+== Auth API
+
+include::api/auth/auth.adoc[]
