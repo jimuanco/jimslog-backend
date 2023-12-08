@@ -49,7 +49,7 @@ class PostControllerTest {
         String json = objectMapper.writeValueAsString(request);
 
         // when // then
-        mockMvc.perform(post("/posts/new")
+        mockMvc.perform(post("/posts")
                 .content(json)
                 .contentType(APPLICATION_JSON))
                 .andDo(print())
@@ -66,7 +66,7 @@ class PostControllerTest {
         String json = objectMapper.writeValueAsString(request);
 
         // when // then
-        mockMvc.perform(post("/posts/new")
+        mockMvc.perform(post("/posts")
                         .content(json)
                         .contentType(APPLICATION_JSON))
                 .andDo(print())
@@ -86,7 +86,7 @@ class PostControllerTest {
         String json = objectMapper.writeValueAsString(request);
 
         // when // then
-        mockMvc.perform(post("/posts/new")
+        mockMvc.perform(post("/posts")
                         .content(json)
                         .contentType(APPLICATION_JSON))
                 .andDo(print())

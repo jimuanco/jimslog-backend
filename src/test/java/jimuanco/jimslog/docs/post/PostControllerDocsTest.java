@@ -48,7 +48,7 @@ class PostControllerDocsTest extends RestDocsSupport {
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
-        mockMvc.perform(post("/posts/new")
+        mockMvc.perform(post("/posts")
                 .content(json)
                 .contentType(APPLICATION_JSON))
                 .andDo(print())
