@@ -2,26 +2,31 @@ package jimuanco.jimslog.domain.user;
 
 import jakarta.persistence.*;
 import jimuanco.jimslog.domain.post.Post;
-import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+import static jakarta.persistence.CascadeType.ALL;
+import static jakarta.persistence.GenerationType.IDENTITY;
+import static lombok.AccessLevel.PROTECTED;
+
+@Getter
+@NoArgsConstructor(access = PROTECTED)
 @Entity
 @Table(name = "member")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = IDENTITY)
     private Long id;
     private String name;
     private String email;
     private String password;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = ALL)
     private List<Post> posts = new ArrayList<>();
 
     @Builder
