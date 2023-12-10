@@ -1,7 +1,9 @@
 package jimuanco.jimslog.api.service.auth.request;
 
 import lombok.Builder;
+import lombok.Getter;
 
+@Getter
 public class SignupServiceRequest {
 
     private String name;
