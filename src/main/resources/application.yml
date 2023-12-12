@@ -17,3 +17,6 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+  profiles:
+    include: secret
