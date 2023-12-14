@@ -4,14 +4,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jimuanco.jimslog.api.service.auth.request.LoginServiceRequest;
 import jimuanco.jimslog.api.service.auth.request.SignupServiceRequest;
 import jimuanco.jimslog.api.service.auth.response.TokenResponse;
-import jimuanco.jimslog.domain.user.RefreshToken;
-import jimuanco.jimslog.domain.user.RefreshTokenRepository;
-import jimuanco.jimslog.domain.user.User;
-import jimuanco.jimslog.domain.user.UserRepository;
+import jimuanco.jimslog.domain.user.*;
 import jimuanco.jimslog.exception.EmailAlreadyExists;
 import jimuanco.jimslog.exception.InvalidLoginInformation;
 import jimuanco.jimslog.utils.JwtUtils;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,7 +19,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 @Service
 public class AuthService {
 
@@ -31,27 +27,42 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private final String ADMIN_ID;
     private static final int REFRESH_DAYS = 30;
+
+    public AuthService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtils jwtUtils,
+                       RefreshTokenRepository refreshTokenRepository,
+                       @Value("${jimslog.admin}") String adminId) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtils = jwtUtils;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.ADMIN_ID = adminId;
+    }
 
     public void signup(SignupServiceRequest serviceRequest) {
         checkDuplicateEmail(serviceRequest.getEmail());
 
         String encodedPassword = passwordEncoder.encode(serviceRequest.getPassword());
+        Role role = serviceRequest.getEmail().equals(ADMIN_ID) ? Role.ADMIN : Role.USER;
 
         User user = User.builder()
                 .name(serviceRequest.getName())
                 .email(serviceRequest.getEmail())
                 .password(encodedPassword)
+                .role(role)
                 .build();
         userRepository.save(user);
     }
 
     @Transactional
     public TokenResponse login(LoginServiceRequest serviceRequest, HttpServletResponse response) {
-        authenticateEmailAndPassword(serviceRequest);
+        User user = authenticateEmailAndPassword(serviceRequest);
 
-        String accessToken = jwtUtils.generateAccessToken(serviceRequest.getEmail());
-        Optional<RefreshToken> foundToken = refreshTokenRepository.findByUserEmail(serviceRequest.getEmail());
+        String accessToken = jwtUtils.generateAccessToken(user);
+        Optional<RefreshToken> foundToken = refreshTokenRepository.findByUserEmail(user.getEmail());
 
         String newRefreshToken = UUID.randomUUID().toString();
 
@@ -59,7 +70,7 @@ public class AuthService {
             foundToken.get().updateToken(newRefreshToken);
         } else {
             RefreshToken refreshToken = RefreshToken.builder()
-                    .userEmail(serviceRequest.getEmail())
+                    .userEmail(user.getEmail())
                     .refreshToken(newRefreshToken)
                     .expiryDate(LocalDateTime.now().plusDays(REFRESH_DAYS))
                     .build();
@@ -79,7 +90,7 @@ public class AuthService {
         }
     }
 
-    private void authenticateEmailAndPassword(LoginServiceRequest serviceRequest) {
+    private User authenticateEmailAndPassword(LoginServiceRequest serviceRequest) {
         User user = userRepository.findByEmail(serviceRequest.getEmail())
                 .orElseThrow(InvalidLoginInformation::new);
 
@@ -87,6 +98,8 @@ public class AuthService {
         if (!matches) {
             throw new InvalidLoginInformation();
         }
+
+        return user;
     }
 
     private void addRefreshTokenInCookie(HttpServletResponse response, String newToken) {

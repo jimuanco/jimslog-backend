@@ -1,19 +1,13 @@
 package jimuanco.jimslog.api.controller.post;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jimuanco.jimslog.ControllerTestSupport;
 import jimuanco.jimslog.api.controller.post.request.PostCreateRequest;
 import jimuanco.jimslog.api.controller.post.request.PostEditRequest;
-import jimuanco.jimslog.api.service.post.PostService;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
-import jimuanco.jimslog.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,19 +22,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(SecurityConfig.class)
-@WebMvcTest(controllers = PostController.class)
-class PostControllerTest {
+class PostControllerTest extends ControllerTestSupport {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockBean
-    private PostService postService;
-
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
     @DisplayName("새로운 글을 등록한다.")
     @Test
     void createPost() throws Exception {
@@ -57,6 +41,47 @@ class PostControllerTest {
                 .contentType(APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk());
+    }
+
+    @DisplayName("새로운 글을 등록할때 인증되지 않은 사용자는 등록할 수 없다.")
+    @Test
+    void createPostForUnauthenticatedUser() throws Exception {
+        // given
+        PostCreateRequest request = PostCreateRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(post("/posts")
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("401"))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 Access Token입니다."));
+    }
+
+    @WithMockUser(username = "jim@gmail.com", roles = {"USER"})
+    @DisplayName("유저 권한만 가진 사용자는 글을 등록할 수 없다.")
+    @Test
+    void createPostForUserWithUserRole() throws Exception {
+        // given
+        PostCreateRequest request = PostCreateRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(post("/posts")
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("403"))
+                .andExpect(jsonPath("$.message").value("접근할 수 없습니다."));
     }
     
     @DisplayName("새로운 글을 등록할 때 제목은 필수값이다.")
@@ -208,6 +233,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(response.size()));
     }
 
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
     @DisplayName("글을 수정한다.")
     @Test
     void editPost() throws Exception {
@@ -225,6 +251,49 @@ class PostControllerTest {
                         .contentType(APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk());
+    }
+
+    @DisplayName("글을 수정할때 인증되지 않은 사용자는 수정할 수 없다.")
+    @Test
+    void editPostForUnauthenticatedUser() throws Exception {
+        // given
+        Long postId = 1L;
+        PostEditRequest request = PostEditRequest.builder()
+                .title("글제목을 수정했습니다.")
+                .content("글내용을 수정했습니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("401"))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 Access Token입니다."));
+    }
+
+    @WithMockUser(username = "jim@gmail.com", roles = {"USER"})
+    @DisplayName("글을 수정할때 유저 권한만 가진 사용자는 글을 수정할 수 없다.")
+    @Test
+    void editPostForUserWithUserRole() throws Exception {
+        // given
+        Long postId = 1L;
+        PostEditRequest request = PostEditRequest.builder()
+                .title("글제목을 수정했습니다.")
+                .content("글내용을 수정했습니다.")
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("403"))
+                .andExpect(jsonPath("$.message").value("접근할 수 없습니다."));
     }
 
     @DisplayName("글을 수정할때 제목은 필수값이다.")
@@ -269,6 +338,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.validation.content").value("내용을 입력해주세요."));
     }
 
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
     @DisplayName("글을 삭제한다.")
     @Test
     void deletePost() throws Exception {
@@ -279,5 +349,34 @@ class PostControllerTest {
         mockMvc.perform(delete("/posts/{postId}", postId))
                 .andDo(print())
                 .andExpect(status().isOk());
+    }
+
+    @DisplayName("글을 삭제할때 인증되지 않은 사용자는 삭제할 수 없다.")
+    @Test
+    void deletePostForUnauthenticatedUser() throws Exception {
+        // given
+        Long postId = 1L;
+
+        // when // then
+        mockMvc.perform(delete("/posts/{postId}", postId))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("401"))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 Access Token입니다."));;
+    }
+
+    @WithMockUser(username = "jim@gmail.com", roles = {"USER"})
+    @DisplayName("글을 삭제할때 유저 권한만 가진 사용자는 글을 삭제할 수 없다.")
+    @Test
+    void deletePostForUserWithUserRole() throws Exception {
+        // given
+        Long postId = 1L;
+
+        // when // then
+        mockMvc.perform(delete("/posts/{postId}", postId))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("403"))
+                .andExpect(jsonPath("$.message").value("접근할 수 없습니다."));
     }
 }

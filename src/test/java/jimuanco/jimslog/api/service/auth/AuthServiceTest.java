@@ -4,12 +4,10 @@ import jakarta.persistence.EntityManager;
 import jimuanco.jimslog.api.service.auth.request.LoginServiceRequest;
 import jimuanco.jimslog.api.service.auth.request.SignupServiceRequest;
 import jimuanco.jimslog.api.service.auth.response.TokenResponse;
-import jimuanco.jimslog.domain.user.RefreshToken;
-import jimuanco.jimslog.domain.user.RefreshTokenRepository;
-import jimuanco.jimslog.domain.user.User;
-import jimuanco.jimslog.domain.user.UserRepository;
+import jimuanco.jimslog.domain.user.*;
 import jimuanco.jimslog.exception.EmailAlreadyExists;
 import jimuanco.jimslog.exception.InvalidLoginInformation;
+import jimuanco.jimslog.utils.JwtUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +37,8 @@ class AuthServiceTest {
 
     @Autowired
     private EntityManager em;
+
+    String testSecretKey = "81b87ceccbd1c0d324168169b2292ab4b53bcd66b54f5e562d0fa4005ebd942f";
     
     @DisplayName("회원가입을 할때 비밀번호는 암호화된다.")
     @Test
@@ -58,6 +58,34 @@ class AuthServiceTest {
         // then
         User user = userRepository.findAll().get(0);
         assertThat(user.getPassword()).isNotEqualTo(rawPassword);
+    }
+
+    @DisplayName("회원가입을 할때 지정된 ADMIN 이메일로 가입하면 ADMIN Role이 부여된다.")
+    @Test
+    void signupWithAdminEmail() {
+        // given
+        String testAdminEmail = "admin@gmail.com";
+
+        SignupServiceRequest serviceRequest = SignupServiceRequest.builder()
+                .name("이름")
+                .email(testAdminEmail)
+                .password("1234")
+                .build();
+
+        AuthService testAuthService = new AuthService(
+                userRepository,
+                passwordEncoder,
+                new JwtUtils(testSecretKey),
+                refreshTokenRepository,
+                testAdminEmail
+        );
+
+        // when
+        testAuthService.signup(serviceRequest);
+
+        // then
+        User user = userRepository.findAll().get(0);
+        assertThat(user.getRole()).isEqualTo(Role.ADMIN);
     }
 
     @DisplayName("회원가입을 할때 이미 가입된 이메일이 존재하면 예외가 발생한다.")
@@ -84,7 +112,7 @@ class AuthServiceTest {
                 .isInstanceOf(EmailAlreadyExists.class)
                 .hasMessage("이미 가입된 이메일입니다.");
     }
-    
+
     @DisplayName("로그인시 Refresh Token을 쿠키로 반환하고 Access Token을 응답값으로 반환한다.")
     @Test
     void login() {
