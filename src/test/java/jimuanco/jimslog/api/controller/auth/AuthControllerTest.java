@@ -1,22 +1,14 @@
 package jimuanco.jimslog.api.controller.auth;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import jimuanco.jimslog.ControllerTestSupport;
 import jimuanco.jimslog.api.controller.auth.request.LoginRequest;
 import jimuanco.jimslog.api.controller.auth.request.SignupRequest;
-import jimuanco.jimslog.api.service.auth.AuthService;
 import jimuanco.jimslog.api.service.auth.request.LoginServiceRequest;
 import jimuanco.jimslog.api.service.auth.response.TokenResponse;
-import jimuanco.jimslog.config.SecurityConfig;
-import jimuanco.jimslog.utils.JwtUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseCookie;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
@@ -27,18 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@Import({SecurityConfig.class, JwtUtils.class})
-@WebMvcTest(controllers = AuthController.class)
-class AuthControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockBean
-    private AuthService authService;
+class AuthControllerTest extends ControllerTestSupport {
 
     @DisplayName("회원가입을 한다.")
     @Test
