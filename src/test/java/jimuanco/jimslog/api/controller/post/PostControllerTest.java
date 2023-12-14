@@ -7,12 +7,14 @@ import jimuanco.jimslog.api.service.post.PostService;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import jimuanco.jimslog.config.SecurityConfig;
+import jimuanco.jimslog.utils.JwtUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -28,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtUtils.class})
 @WebMvcTest(controllers = PostController.class)
 class PostControllerTest {
 
@@ -41,6 +43,7 @@ class PostControllerTest {
     @MockBean
     private PostService postService;
 
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
     @DisplayName("새로운 글을 등록한다.")
     @Test
     void createPost() throws Exception {
@@ -208,6 +211,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(response.size()));
     }
 
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
     @DisplayName("글을 수정한다.")
     @Test
     void editPost() throws Exception {
@@ -269,6 +273,7 @@ class PostControllerTest {
                 .andExpect(jsonPath("$.validation.content").value("내용을 입력해주세요."));
     }
 
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
     @DisplayName("글을 삭제한다.")
     @Test
     void deletePost() throws Exception {
