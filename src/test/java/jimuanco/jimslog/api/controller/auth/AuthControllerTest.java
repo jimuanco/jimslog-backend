@@ -8,6 +8,7 @@ import jimuanco.jimslog.api.service.auth.AuthService;
 import jimuanco.jimslog.api.service.auth.request.LoginServiceRequest;
 import jimuanco.jimslog.api.service.auth.response.TokenResponse;
 import jimuanco.jimslog.config.SecurityConfig;
+import jimuanco.jimslog.utils.JwtUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtUtils.class})
 @WebMvcTest(controllers = AuthController.class)
 class AuthControllerTest {
 
