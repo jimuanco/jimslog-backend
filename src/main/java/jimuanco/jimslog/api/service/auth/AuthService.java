@@ -84,6 +84,10 @@ public class AuthService {
                 .build();
     }
 
+    public TokenResponse refresh(String refreshToken, HttpServletResponse response) {
+        return null;
+    }
+
     private void checkDuplicateEmail(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
             throw new EmailAlreadyExists();
