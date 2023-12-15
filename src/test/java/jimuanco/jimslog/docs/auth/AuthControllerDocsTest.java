@@ -1,5 +1,6 @@
 package jimuanco.jimslog.docs.auth;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jimuanco.jimslog.api.controller.auth.AuthController;
 import jimuanco.jimslog.api.controller.auth.request.LoginRequest;
@@ -16,17 +17,16 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static org.springframework.restdocs.cookies.CookieDocumentation.cookieWithName;
-import static org.springframework.restdocs.cookies.CookieDocumentation.responseCookies;
+import static org.springframework.restdocs.cookies.CookieDocumentation.*;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 public class AuthControllerDocsTest extends RestDocsSupport {
@@ -110,6 +110,53 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("password").type(JsonFieldType.STRING)
                                         .description("비밀번호")
                         ),
+                        responseFields(
+                                fieldWithPath("data.accessToken").type(JsonFieldType.STRING)
+                                        .description("Access Token")
+                        ),
+                        responseCookies(cookieWithName("refreshToken").description("Refresh Token"))
+                ));
+    }
+
+    @DisplayName("Refresh Token으로 Access Token 재발급 API") //todo 리팩토링
+    @Test
+    void refresh() throws Exception {
+        String accessToken = "JWT accessToken";
+        TokenResponse tokenResponse = TokenResponse.builder()
+                .accessToken(accessToken)
+                .build();
+
+        String refreshToken = UUID.randomUUID().toString();
+
+        Cookie requestCookie = new Cookie("refreshToken", refreshToken);
+
+        requestCookie.setMaxAge(7 * 24 * 60 * 60);
+        requestCookie.setPath("/");
+        requestCookie.setSecure(true);
+        requestCookie.isHttpOnly();
+
+        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .maxAge(7 * 24 * 60 * 60)
+                .path("/")
+                .secure(true)
+                .sameSite("None")
+                .httpOnly(true)
+                .build();
+
+        given(authService.refresh(eq(refreshToken), any(HttpServletResponse.class)))
+                .willReturn(tokenResponse);
+
+        mockMvc.perform(post("/auth/refresh")
+                        .cookie(requestCookie))
+                .andDo(print())
+                .andDo(result -> {
+                    HttpServletResponse response = result.getResponse();
+                    response.setHeader("Set-Cookie", responseCookie.toString());
+                })
+                .andExpect(status().isOk())
+                .andDo(document("auth-refresh",
+                        preprocessResponse(prettyPrint()),
+                        requestCookies(cookieWithName("refreshToken").description("Refresh Token")),
                         responseFields(
                                 fieldWithPath("data.accessToken").type(JsonFieldType.STRING)
                                         .description("Access Token")

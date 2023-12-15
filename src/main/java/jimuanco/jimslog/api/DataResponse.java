@@ -1,7 +1,5 @@
 package jimuanco.jimslog.api;
 
-import jimuanco.jimslog.api.service.post.response.PostResponse;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -12,7 +10,7 @@ public class DataResponse<T> {
         this.data = data;
     }
 
-    public static <T> DataResponse<T> ok(T data) {
+    public static <T> DataResponse<T> of(T data) {
         return new DataResponse<>(data);
     }
 }

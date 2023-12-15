@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -26,6 +27,17 @@ public class ApiControllerAdvice {
             response.addValidation(fieldError.getField(), fieldError.getDefaultMessage());
         }
 
+        return response;
+    }
+
+    @ResponseBody
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ErrorResponse refreshTokenNotFound() {
+        ErrorResponse response = ErrorResponse.builder()
+                .code("400")
+                .message("Refresh Token이 존재하지 않습니다.")
+                .build();
         return response;
     }
 
