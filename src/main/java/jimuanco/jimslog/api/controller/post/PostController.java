@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
+
 @RestController
 @RequiredArgsConstructor
 public class PostController {
@@ -20,6 +23,7 @@ public class PostController {
     private final PostService postService;
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @ResponseStatus(CREATED)
     @PostMapping("/posts")
     public void createPost(@Valid @RequestBody PostCreateRequest postCreateRequest) {
         postService.createPost(postCreateRequest.toServiceRequest());
@@ -27,7 +31,7 @@ public class PostController {
 
     @GetMapping("/posts/{postId}")
     public DataResponse<PostResponse> getPost(@PathVariable(name = "postId") Long postId) {
-        return DataResponse.ok(postService.getPost(postId));
+        return DataResponse.of(postService.getPost(postId));
     }
 
     @GetMapping("/posts")
@@ -38,10 +42,11 @@ public class PostController {
                 .page(page)
                 .size(size)
                 .build();
-        return DataResponse.ok(postService.getPostList(serviceRequest));
+        return DataResponse.of(postService.getPostList(serviceRequest));
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @ResponseStatus(NO_CONTENT)
     @PatchMapping("/posts/{postId}")
     public void editPost(@PathVariable(name = "postId") Long postId,
                          @Valid @RequestBody PostEditRequest postEditRequest) {
