@@ -52,7 +52,7 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                         .content(json)
                         .contentType(APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andDo(document("auth-signup",
                         preprocessRequest(prettyPrint()),
                         requestFields(

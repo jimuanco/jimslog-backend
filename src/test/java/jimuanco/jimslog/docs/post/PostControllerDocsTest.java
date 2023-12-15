@@ -52,7 +52,7 @@ class PostControllerDocsTest extends RestDocsSupport {
                 .content(json)
                 .contentType(APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andDo(document("post-create",
                         preprocessRequest(prettyPrint()),
                         requestFields(
@@ -159,7 +159,7 @@ class PostControllerDocsTest extends RestDocsSupport {
                         .content(json)
                         .contentType(APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isNoContent())
                 .andDo(document("post-edit",
                         preprocessRequest(prettyPrint()),
                         pathParameters(parameterWithName("postId")

@@ -40,7 +40,7 @@ class PostControllerTest extends ControllerTestSupport {
                 .content(json)
                 .contentType(APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @DisplayName("새로운 글을 등록할때 인증되지 않은 사용자는 등록할 수 없다.")
@@ -250,7 +250,7 @@ class PostControllerTest extends ControllerTestSupport {
                         .content(json)
                         .contentType(APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @DisplayName("글을 수정할때 인증되지 않은 사용자는 수정할 수 없다.")

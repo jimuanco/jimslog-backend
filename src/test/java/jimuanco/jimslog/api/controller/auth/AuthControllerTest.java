@@ -39,7 +39,7 @@ class AuthControllerTest extends ControllerTestSupport {
                         .content(json)
                         .contentType(APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @DisplayName("회원가입 할때 이름은 필수값이다.")
