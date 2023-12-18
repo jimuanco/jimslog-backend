@@ -84,7 +84,7 @@ public class AuthService {
                 }
         );
 
-        addRefreshTokenInCookie(response, newRefreshToken, expiryDate);
+        addRefreshTokenInCookie(response, newRefreshToken, Duration.between(now(), expiryDate));
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
@@ -114,12 +114,21 @@ public class AuthService {
         if (foundToken.getExpiryDate().isBefore(minimumExpiration)) {
             String newRefreshToken = UUID.randomUUID().toString();
             foundToken.updateToken(newRefreshToken, expiryDate);
-            addRefreshTokenInCookie(response, newRefreshToken, expiryDate);
+            addRefreshTokenInCookie(response, newRefreshToken, Duration.between(now(), expiryDate));
         }
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .build();
+    }
+
+    @Transactional
+    public void logout(String refreshToken, HttpServletResponse response) {
+        RefreshToken foundToken = refreshTokenRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(InvalidRefreshToken::new);
+        refreshTokenRepository.delete(foundToken);
+
+        addRefreshTokenInCookie(response, refreshToken, Duration.ZERO);
     }
 
     private void checkDuplicateEmail(String email) {
@@ -140,9 +149,9 @@ public class AuthService {
         return user;
     }
 
-    private void addRefreshTokenInCookie(HttpServletResponse response, String newToken, LocalDateTime expiryDate) {
+    private void addRefreshTokenInCookie(HttpServletResponse response, String newToken, Duration duration) {
         ResponseCookie cookie = ResponseCookie.from("refreshToken", newToken)
-                .maxAge(Duration.between(now(), expiryDate))
+                .maxAge(duration)
                 .path("/")
                 .secure(true)
                 .sameSite("None")
