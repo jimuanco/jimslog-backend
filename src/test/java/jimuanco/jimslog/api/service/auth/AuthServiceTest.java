@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -389,5 +390,51 @@ class AuthServiceTest {
         String newRefreshToken = response.getCookie("refreshToken").getValue().toString();
         assertThat(tokenResponse.getAccessToken()).isNotEmpty();
         assertThat(refreshToken).isNotEqualTo(newRefreshToken);
+    }
+
+    @DisplayName("로그아웃한다.")
+    @Test
+    void logout() {
+        // given
+        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
+        String refreshToken = UUID.randomUUID().toString();
+
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .userEmail("jim@gmail.com")
+                .refreshToken(refreshToken)
+                .expiryDate(expiryDate)
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        // when
+        authService.logout(refreshToken, response);
+
+        // then
+        assertThat(response.getCookie("refreshToken").getMaxAge()).isZero();
+        assertThat(refreshTokenRepository.findByRefreshToken(refreshToken).isEmpty()).isTrue();
+    }
+
+    @DisplayName("로그아웃시 잘못된 Refresh Token으로 요청하면 예외가 발생한다.")
+    @Test
+    void logoutWithWrongRefreshToken() {
+        // given
+        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
+        String refreshToken = UUID.randomUUID().toString();
+
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .userEmail("jim@gmail.com")
+                .refreshToken(refreshToken)
+                .expiryDate(expiryDate)
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        // when // then
+        assertThatThrownBy(() -> authService.logout(refreshToken + "a", response))
+                .isInstanceOf(InvalidRefreshToken.class)
+                .hasMessage("Refresh Token이 유효하지 않습니다.");
     }
 }
