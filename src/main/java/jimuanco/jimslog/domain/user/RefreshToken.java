@@ -32,7 +32,8 @@ public class RefreshToken {
         this.expiryDate = expiryDate;
     }
 
-    public void updateToken(String newToken) {
+    public void updateToken(String newToken, LocalDateTime expiryDate) {
         this.refreshToken = newToken;
+        this.expiryDate = expiryDate;
     }
 }
