@@ -7,6 +7,8 @@ import jimuanco.jimslog.api.service.auth.response.TokenResponse;
 import jimuanco.jimslog.domain.user.*;
 import jimuanco.jimslog.exception.EmailAlreadyExists;
 import jimuanco.jimslog.exception.InvalidLoginInformation;
+import jimuanco.jimslog.exception.InvalidRefreshToken;
+import jimuanco.jimslog.exception.UserNotFound;
 import jimuanco.jimslog.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
@@ -14,9 +16,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+
+import static java.time.LocalDateTime.now;
 
 @Transactional(readOnly = true)
 @Service
@@ -28,7 +33,6 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     private final String ADMIN_ID;
-    private static final int REFRESH_DAYS = 30;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -58,7 +62,9 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenResponse login(LoginServiceRequest serviceRequest, HttpServletResponse response) {
+    public TokenResponse login(LoginServiceRequest serviceRequest,
+                               HttpServletResponse response,
+                               LocalDateTime expiryDate) {
         User user = authenticateEmailAndPassword(serviceRequest);
 
         String accessToken = jwtUtils.generateAccessToken(user);
@@ -66,26 +72,54 @@ public class AuthService {
 
         String newRefreshToken = UUID.randomUUID().toString();
 
-        if (foundToken.isPresent()) {
-            foundToken.get().updateToken(newRefreshToken);
-        } else {
-            RefreshToken refreshToken = RefreshToken.builder()
-                    .userEmail(user.getEmail())
-                    .refreshToken(newRefreshToken)
-                    .expiryDate(LocalDateTime.now().plusDays(REFRESH_DAYS))
-                    .build();
-            refreshTokenRepository.save(refreshToken);
-        }
+        foundToken.ifPresentOrElse(
+                token -> token.updateToken(newRefreshToken, expiryDate),
+                () -> {
+                    RefreshToken refreshToken = RefreshToken.builder()
+                            .userEmail(user.getEmail())
+                            .refreshToken(newRefreshToken)
+                            .expiryDate(expiryDate)
+                            .build();
+                    refreshTokenRepository.save(refreshToken);
+                }
+        );
 
-        addRefreshTokenInCookie(response, newRefreshToken);
+        addRefreshTokenInCookie(response, newRefreshToken, expiryDate);
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .build();
     }
 
-    public TokenResponse refresh(String refreshToken, HttpServletResponse response) {
-        return null;
+    public TokenResponse refresh(String refreshToken,
+                                 HttpServletResponse response,
+                                 LocalDateTime minimumExpiration,
+                                 LocalDateTime expiryDate) {
+        // todo Redis 도입
+        RefreshToken foundToken = refreshTokenRepository.findByRefreshToken(refreshToken)
+                .filter(token -> {
+                    if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
+                        refreshTokenRepository.delete(token);
+                        return false;
+                    }
+                    return true;
+                })
+                .orElseThrow(InvalidRefreshToken::new);
+
+        User user = userRepository.findByEmail(foundToken.getUserEmail())
+                .orElseThrow(UserNotFound::new);
+
+        String accessToken = jwtUtils.generateAccessToken(user);
+
+        if (foundToken.getExpiryDate().isBefore(minimumExpiration)) {
+            String newRefreshToken = UUID.randomUUID().toString();
+            foundToken.updateToken(newRefreshToken, expiryDate);
+            addRefreshTokenInCookie(response, newRefreshToken, expiryDate);
+        }
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .build();
     }
 
     private void checkDuplicateEmail(String email) {
@@ -106,9 +140,9 @@ public class AuthService {
         return user;
     }
 
-    private void addRefreshTokenInCookie(HttpServletResponse response, String newToken) {
+    private void addRefreshTokenInCookie(HttpServletResponse response, String newToken, LocalDateTime expiryDate) {
         ResponseCookie cookie = ResponseCookie.from("refreshToken", newToken)
-                .maxAge(REFRESH_DAYS * 24 * 60 * 60)
+                .maxAge(Duration.between(now(), expiryDate))
                 .path("/")
                 .secure(true)
                 .sameSite("None")

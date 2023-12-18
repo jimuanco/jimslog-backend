@@ -35,4 +35,24 @@ class RefreshTokenRepositoryTest {
         // then
         assertThat(foundToken.getRefreshToken()).isEqualTo(newToken);
     }
+
+    @DisplayName("Refresh Token으로 회원 이메일을 조회한다.")
+    @Test
+    void findByRefreshToken() {
+        // given
+        String userEmail = "jim@gmail.com";
+        String newToken = UUID.randomUUID().toString();
+        RefreshToken refreshToken = RefreshToken.builder()
+                .refreshToken(newToken)
+                .userEmail(userEmail)
+                .expiryDate(LocalDateTime.now().plusDays(30))
+                .build();
+        refreshTokenRepository.save(refreshToken);
+
+        // when
+        RefreshToken foundToken = refreshTokenRepository.findByRefreshToken(newToken).get();
+
+        // then
+        assertThat(foundToken.getUserEmail()).isEqualTo(userEmail);
+    }
 }
