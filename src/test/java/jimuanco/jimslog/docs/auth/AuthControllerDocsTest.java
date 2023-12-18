@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseCookie;
 import org.springframework.restdocs.payload.JsonFieldType;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -89,8 +90,11 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                 .httpOnly(true)
                 .build();
 
-        given(authService.login(any(LoginServiceRequest.class), any(HttpServletResponse.class)))
-                .willReturn(tokenResponse);
+        given(authService.login(
+                any(LoginServiceRequest.class),
+                any(HttpServletResponse.class),
+                any(LocalDateTime.class))
+        ).willReturn(tokenResponse);
 
         mockMvc.perform(post("/auth/login")
                         .content(json)
@@ -143,8 +147,12 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                 .httpOnly(true)
                 .build();
 
-        given(authService.refresh(eq(refreshToken), any(HttpServletResponse.class)))
-                .willReturn(tokenResponse);
+        given(authService.refresh(
+                eq(refreshToken),
+                any(HttpServletResponse.class),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class))
+        ).willReturn(tokenResponse);
 
         mockMvc.perform(post("/auth/refresh")
                         .cookie(requestCookie))

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseCookie;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -129,7 +130,7 @@ class AuthControllerTest extends ControllerTestSupport {
                 .httpOnly(true)
                 .build();
 
-        given(authService.login(any(LoginServiceRequest.class), any(HttpServletResponse.class)))
+        given(authService.login(any(LoginServiceRequest.class), any(HttpServletResponse.class), any(LocalDateTime.class)))
                 .willReturn(tokenResponse);
 
         // when // then
@@ -212,8 +213,12 @@ class AuthControllerTest extends ControllerTestSupport {
                 .httpOnly(true)
                 .build();
 
-        given(authService.refresh(eq(refreshToken), any(HttpServletResponse.class)))
-                .willReturn(tokenResponse);
+        given(authService.refresh(
+                eq(refreshToken),
+                any(HttpServletResponse.class),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class))
+        ).willReturn(tokenResponse);
 
         // when // then
         mockMvc.perform(post("/auth/refresh")
@@ -247,8 +252,12 @@ class AuthControllerTest extends ControllerTestSupport {
                 .httpOnly(true)
                 .build();
 
-        given(authService.refresh(eq(refreshToken), any(HttpServletResponse.class)))
-                .willReturn(tokenResponse);
+        given(authService.refresh(
+                eq(refreshToken),
+                any(HttpServletResponse.class),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class))
+        ).willReturn(tokenResponse);
 
         // when // then
         mockMvc.perform(post("/auth/refresh"))
