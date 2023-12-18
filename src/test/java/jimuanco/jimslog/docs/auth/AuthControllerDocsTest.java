@@ -133,7 +133,6 @@ public class AuthControllerDocsTest extends RestDocsSupport {
         String refreshToken = UUID.randomUUID().toString();
 
         Cookie requestCookie = new Cookie("refreshToken", refreshToken);
-
         requestCookie.setMaxAge(7 * 24 * 60 * 60);
         requestCookie.setPath("/");
         requestCookie.setSecure(true);
@@ -155,7 +154,8 @@ public class AuthControllerDocsTest extends RestDocsSupport {
         ).willReturn(tokenResponse);
 
         mockMvc.perform(post("/auth/refresh")
-                        .cookie(requestCookie))
+                        .cookie(requestCookie)
+                        .contentType(APPLICATION_JSON))
                 .andDo(print())
                 .andDo(result -> {
                     HttpServletResponse response = result.getResponse();
@@ -170,6 +170,41 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                                         .description("Access Token")
                         ),
                         responseCookies(cookieWithName("refreshToken").description("Refresh Token"))
+                ));
+    }
+
+    @DisplayName("로그아웃 API")
+    @Test
+    void logout() throws Exception {
+
+        String refreshToken = UUID.randomUUID().toString();
+
+        Cookie requestCookie = new Cookie("refreshToken", refreshToken);
+        requestCookie.setMaxAge(7 * 24 * 60 * 60);
+        requestCookie.setPath("/");
+        requestCookie.setSecure(true);
+        requestCookie.isHttpOnly();
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .maxAge(0)
+                .path("/")
+                .secure(true)
+                .sameSite("None")
+                .httpOnly(true)
+                .build();
+
+        mockMvc.perform(post("/auth/logout")
+                        .cookie(requestCookie)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andDo(result -> {
+                    HttpServletResponse response = result.getResponse();
+                    response.setHeader("Set-Cookie", cookie.toString());
+                })
+                .andExpect(status().isOk())
+                .andDo(document("auth-logout",
+                        requestCookies(cookieWithName("refreshToken").description("Refresh Token")),
+                        responseCookies(cookieWithName("refreshToken").description("Expired Refresh Token"))
                 ));
     }
 }
