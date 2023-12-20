@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
-import static java.time.LocalDateTime.*;
+import static java.time.LocalDateTime.now;
 import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
@@ -46,5 +46,11 @@ public class AuthController {
         LocalDateTime expiryDate = now.plusDays(30);
 
         return DataResponse.of(authService.refresh(refreshToken, response, minimumExpiration, expiryDate));
+    }
+
+    @PostMapping("/logout")
+    public void logout(@CookieValue(value = "refreshToken") Cookie cookie, HttpServletResponse response) {
+        String refreshToken = cookie.getValue();
+        authService.logout(refreshToken, response);
     }
 }

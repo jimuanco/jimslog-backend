@@ -271,4 +271,62 @@ class AuthControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.message").value("Refresh Token이 존재하지 않습니다."));
     }
 
+    @DisplayName("로그아웃한다.")
+    @Test
+    void logout() throws Exception {
+        // given
+        String refreshToken = UUID.randomUUID().toString();
+
+        Cookie requestCookie = new Cookie("refreshToken", refreshToken);
+        requestCookie.setMaxAge(7 * 24 * 60 * 60);
+        requestCookie.setPath("/");
+        requestCookie.setSecure(true);
+        requestCookie.isHttpOnly();
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .maxAge(0)
+                .path("/")
+                .secure(true)
+                .sameSite("None")
+                .httpOnly(true)
+                .build();
+
+        // when // then
+        mockMvc.perform(post("/auth/logout")
+                        .cookie(requestCookie))
+                .andDo(print())
+                .andDo(result -> {
+                    HttpServletResponse response = result.getResponse();
+                    response.setHeader("Set-Cookie", cookie.toString());
+                })
+                .andExpect(status().isOk())
+                .andExpect(cookie().doesNotExist(refreshToken));
+    }
+
+    @DisplayName("로그아웃 요청시 쿠키에 Refresh Token이 존재하지 않으면 예외가 발생한다.")
+    @Test
+    void logoutWithoutRefreshTokenInCookie() throws Exception {
+        // given
+        String refreshToken = UUID.randomUUID().toString();
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .maxAge(0)
+                .path("/")
+                .secure(true)
+                .sameSite("None")
+                .httpOnly(true)
+                .build();
+
+        // when // then
+        mockMvc.perform(post("/auth/logout"))
+                .andDo(print())
+                .andDo(result -> {
+                    HttpServletResponse response = result.getResponse();
+                    response.setHeader("Set-Cookie", cookie.toString());
+                })
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("400"))
+                .andExpect(jsonPath("$.message").value("Refresh Token이 존재하지 않습니다."));
+    }
+
 }
