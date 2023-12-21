@@ -37,8 +37,12 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public DataResponse<TokenResponse> refresh(@CookieValue(value = "refreshToken") Cookie cookie,
+    public DataResponse<TokenResponse> refresh(@CookieValue(value = "refreshToken", required = false) Cookie cookie,
                                                HttpServletResponse response) {
+        if (cookie == null) {
+            return handleNoCookieCase(response);
+        }
+
         String refreshToken = cookie.getValue();
 
         LocalDateTime now = now();
@@ -52,5 +56,10 @@ public class AuthController {
     public void logout(@CookieValue(value = "refreshToken") Cookie cookie, HttpServletResponse response) {
         String refreshToken = cookie.getValue();
         authService.logout(refreshToken, response);
+    }
+
+    private DataResponse<TokenResponse> handleNoCookieCase(HttpServletResponse response) {
+        response.setStatus(HttpServletResponse.SC_OK);
+        return null;
     }
 }

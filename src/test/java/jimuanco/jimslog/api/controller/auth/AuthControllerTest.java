@@ -14,6 +14,7 @@ import org.springframework.http.ResponseCookie;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static jimuanco.jimslog.domain.user.Role.USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -119,6 +120,7 @@ class AuthControllerTest extends ControllerTestSupport {
         String accessToken = "JWT accessToken";
         TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken(accessToken)
+                .role(USER)
                 .build();
 
         String refreshToken = UUID.randomUUID().toString();
@@ -145,7 +147,8 @@ class AuthControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("refreshToken"))
                 .andExpect(cookie().value("refreshToken", refreshToken))
-                .andExpect(jsonPath("$.data.accessToken").value(accessToken));
+                .andExpect(jsonPath("$.data.accessToken").value(accessToken))
+                .andExpect(jsonPath("$.data.role").value("USER"));
     }
 
     @DisplayName("로그인할때 이메일은 필수값이다.")
@@ -195,6 +198,7 @@ class AuthControllerTest extends ControllerTestSupport {
         String accessToken = "JWT accessToken";
         TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken(accessToken)
+                .role(USER)
                 .build();
 
         String refreshToken = UUID.randomUUID().toString();
@@ -231,44 +235,19 @@ class AuthControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(cookie().exists("refreshToken"))
                 .andExpect(cookie().value("refreshToken", refreshToken))
-                .andExpect(jsonPath("$.data.accessToken").value(accessToken));
+                .andExpect(jsonPath("$.data.accessToken").value(accessToken))
+                .andExpect(jsonPath("$.data.role").value("USER"));
     }
 
-    @DisplayName("Refresh Token으로 Access Token을 재발급 받을때 Refresh Token은 필수값이다.") //todo 리팩토링
+    @DisplayName("Refresh Token으로 Access Token을 재발급 받을때 Refresh Token이 없어도 예외가 발생하지 않는다.") //todo 리팩토링
     @Test
     void refreshWithoutRefreshToken() throws Exception {
         // given
-        String accessToken = "JWT accessToken";
-        TokenResponse tokenResponse = TokenResponse.builder()
-                .accessToken(accessToken)
-                .build();
-
-        String refreshToken = UUID.randomUUID().toString();
-        ResponseCookie responseCookie = ResponseCookie.from("refreshToken", refreshToken)
-                .maxAge(7 * 24 * 60 * 60)
-                .path("/")
-                .secure(true)
-                .sameSite("None")
-                .httpOnly(true)
-                .build();
-
-        given(authService.refresh(
-                eq(refreshToken),
-                any(HttpServletResponse.class),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class))
-        ).willReturn(tokenResponse);
 
         // when // then
         mockMvc.perform(post("/auth/refresh"))
                 .andDo(print())
-                .andDo(result -> {
-                    HttpServletResponse response = result.getResponse();
-                    response.setHeader("Set-Cookie", responseCookie.toString());
-                })
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("400"))
-                .andExpect(jsonPath("$.message").value("Refresh Token이 존재하지 않습니다."));
+                .andExpect(status().isOk());
     }
 
     @DisplayName("로그아웃한다.")
