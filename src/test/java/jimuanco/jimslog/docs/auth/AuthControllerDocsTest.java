@@ -17,6 +17,7 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static jimuanco.jimslog.domain.user.Role.USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -79,6 +80,7 @@ public class AuthControllerDocsTest extends RestDocsSupport {
         String accessToken = "JWT accessToken";
         TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken(accessToken)
+                .role(USER)
                 .build();
 
         String refreshToken = UUID.randomUUID().toString();
@@ -116,7 +118,9 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                         ),
                         responseFields(
                                 fieldWithPath("data.accessToken").type(JsonFieldType.STRING)
-                                        .description("Access Token")
+                                        .description("Access Token"),
+                                fieldWithPath("data.role").type(JsonFieldType.STRING)
+                                        .description("Role: USER or ADMIN")
                         ),
                         responseCookies(cookieWithName("refreshToken").description("Refresh Token"))
                 ));
@@ -128,6 +132,7 @@ public class AuthControllerDocsTest extends RestDocsSupport {
         String accessToken = "JWT accessToken";
         TokenResponse tokenResponse = TokenResponse.builder()
                 .accessToken(accessToken)
+                .role(USER)
                 .build();
 
         String refreshToken = UUID.randomUUID().toString();
@@ -167,7 +172,9 @@ public class AuthControllerDocsTest extends RestDocsSupport {
                         requestCookies(cookieWithName("refreshToken").description("Refresh Token")),
                         responseFields(
                                 fieldWithPath("data.accessToken").type(JsonFieldType.STRING)
-                                        .description("Access Token")
+                                        .description("Access Token"),
+                                fieldWithPath("data.role").type(JsonFieldType.STRING)
+                                        .description("Role: USER or ADMIN")
                         ),
                         responseCookies(cookieWithName("refreshToken").description("Refresh Token"))
                 ));
