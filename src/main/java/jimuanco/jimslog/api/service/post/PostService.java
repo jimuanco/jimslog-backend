@@ -47,6 +47,7 @@ public class PostService {
         post.edit(serviceRequest.getTitle(), serviceRequest.getContent()); // todo editor class 만들지 고민
     }
 
+    @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(PostNotFound::new);
