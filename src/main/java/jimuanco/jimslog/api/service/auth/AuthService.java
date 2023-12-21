@@ -88,6 +88,7 @@ public class AuthService {
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
+                .role(user.getRole())
                 .build();
     }
 
@@ -119,6 +120,7 @@ public class AuthService {
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
+                .role(user.getRole())
                 .build();
     }
 
