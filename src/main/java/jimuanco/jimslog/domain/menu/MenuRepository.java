@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MenuRepository extends JpaRepository<Menu, Long> {
+public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRepositoryCustom {
 
     @Modifying()
     @Query("delete from Menu m where m.id in :ids")
