@@ -1,6 +1,7 @@
 package jimuanco.jimslog.api.service.menu;
 
 import jimuanco.jimslog.api.service.menu.request.MenuServiceRequest;
+import jimuanco.jimslog.api.service.post.response.MenuResponse;
 import jimuanco.jimslog.domain.menu.Menu;
 import jimuanco.jimslog.domain.menu.MenuRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,10 @@ public class MenuService {
     private List<Long> mainMenusToDelete;
     private List<Long> subMenusToDelete;
 
-//    public List<MenuResponse> getMenus() {
-//        List<Menu> allMenus = menuRepository.findAllMenus();
-//        return allMenus.stream().map(MenuResponse::new).collect(Collectors.toList());
-//    }
+    public List<MenuResponse> getMenus() {
+        List<Menu> allMenus = menuRepository.findAllMenus();
+        return allMenus.stream().map(MenuResponse::new).collect(Collectors.toList());
+    }
 
     @Transactional
     public void changeMenus(List<MenuServiceRequest> serviceRequests) {
