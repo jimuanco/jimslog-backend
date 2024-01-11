@@ -18,3 +18,8 @@ include::api/post/post.adoc[]
 == Auth API
 
 include::api/auth/auth.adoc[]
+
+[[Menu-API]]
+== Menu API
+
+include::api/menu/menu.adoc[]
