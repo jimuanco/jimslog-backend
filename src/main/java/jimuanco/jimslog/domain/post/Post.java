@@ -1,9 +1,7 @@
 package jimuanco.jimslog.domain.post;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+import jimuanco.jimslog.domain.menu.Menu;
 import jimuanco.jimslog.domain.user.User;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,10 +22,14 @@ public class Post {
 
     private String title;
 
+    @Lob
     private String content;
 
     @ManyToOne(fetch = LAZY)
     private User user;
+
+    @ManyToOne(fetch = LAZY)
+    private Menu menu;
 
     @Builder
     public Post(String title, String content, User user) {
