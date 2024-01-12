@@ -4,6 +4,8 @@ import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
+import jimuanco.jimslog.domain.menu.Menu;
+import jimuanco.jimslog.domain.menu.MenuRepository;
 import jimuanco.jimslog.domain.post.Post;
 import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.PostNotFound;
@@ -20,9 +22,13 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final MenuRepository menuRepository;
 
     public void createPost(PostCreateServiceRequest serviceRequest) {
-        Post post = serviceRequest.toEntity();
+        long menuId = serviceRequest.getMenuId();
+        Menu menu = (menuId != 0) ? menuRepository.findById(menuId).orElseThrow(PostNotFound::new) : null;
+
+        Post post = serviceRequest.toEntity(menu);
         postRepository.save(post);
     }
 

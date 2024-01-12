@@ -24,7 +24,7 @@ public class MenuResponse {
         this.children = children;
     }
 
-    public MenuResponse(Menu menu) {
+    public MenuResponse(Menu menu) { // todo Post랑 엮어서 단위테스트 작성
         this.id = menu.getId();
         this.name = menu.getName();
         this.listOrder = menu.getListOrder();
