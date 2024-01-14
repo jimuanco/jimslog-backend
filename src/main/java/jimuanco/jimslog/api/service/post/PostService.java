@@ -8,11 +8,13 @@ import jimuanco.jimslog.domain.menu.Menu;
 import jimuanco.jimslog.domain.menu.MenuRepository;
 import jimuanco.jimslog.domain.post.Post;
 import jimuanco.jimslog.domain.post.PostRepository;
+import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,7 +42,17 @@ public class PostService {
     }
 
     public List<PostResponse> getPostList(PostSearchServiceRequest serviceRequest) {
-        return postRepository.getPostList(serviceRequest).stream()
+        List<Long> menuIdList = new ArrayList<>();
+
+        if(serviceRequest.getMenuId() != 0) {
+            Menu menu = menuRepository.findById((long) serviceRequest.getMenuId())
+                    .orElseThrow(MenuNotFound::new);
+            menuIdList.addAll(menu.getChildren().stream().map(Menu::getId).collect(Collectors.toList()));
+        }
+
+        menuIdList.add((long) serviceRequest.getMenuId());
+
+        return postRepository.getPostList(serviceRequest, menuIdList).stream()
                 .map(PostResponse::of)
                 .collect(Collectors.toList());
     }
