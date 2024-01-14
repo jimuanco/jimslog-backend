@@ -133,7 +133,10 @@ class PostControllerDocsTest extends RestDocsSupport {
                                         .attributes(key("default").value("1")),
                                 parameterWithName("size")
                                         .description("사이즈").optional()
-                                        .attributes(key("default").value("10"))
+                                        .attributes(key("default").value("10")),
+                                parameterWithName("menu")
+                                        .description("메뉴 ID, 0(default)으로 조회시 모든 게시글 조회").optional()
+                                        .attributes(key("default").value("0"))
                         ),
                         responseFields(
                                 fieldWithPath("data[0].id").type(JsonFieldType.NUMBER)
