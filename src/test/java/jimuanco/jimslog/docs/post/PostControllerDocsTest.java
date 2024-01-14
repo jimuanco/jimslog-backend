@@ -59,7 +59,9 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("title").type(JsonFieldType.STRING)
                                         .description("글 제목"),
                                 fieldWithPath("content").type(JsonFieldType.STRING)
-                                        .description("글 내용")
+                                        .description("글 내용"),
+                                fieldWithPath("menuId").type(JsonFieldType.NUMBER)
+                                        .description("메뉴 ID")
                         )
                 ));
     }
