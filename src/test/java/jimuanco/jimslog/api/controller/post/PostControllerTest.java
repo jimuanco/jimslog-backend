@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithMockUser;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -140,11 +141,15 @@ class PostControllerTest extends ControllerTestSupport {
         // given
         Long postId = 1L;
 
+        LocalDateTime createdDateTime =
+                LocalDateTime.of(2024, 1, 18, 23, 30, 30);
+
         given(postService.getPost(anyLong()))
                 .willReturn(PostResponse.builder()
                         .id(postId)
                         .title("글제목 입니다.")
                         .content("글내용 입니다.")
+                        .createdDateTime(createdDateTime)
                         .build()
                 );
         // when // then
@@ -153,7 +158,8 @@ class PostControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value(1L))
                 .andExpect(jsonPath("$.data.title").value("글제목 입니다."))
-                .andExpect(jsonPath("$.data.content").value("글내용 입니다."));
+                .andExpect(jsonPath("$.data.content").value("글내용 입니다."))
+                .andExpect(jsonPath("$.data.createdDateTime").value(createdDateTime.toString()));
     }
 
     @DisplayName("글을 여러개 조회한다.")
@@ -165,11 +171,15 @@ class PostControllerTest extends ControllerTestSupport {
         int menuId = 1;
         int offset = 21;
 
+        LocalDateTime createdDateTime =
+                LocalDateTime.of(2024, 1, 18, 23, 30, 30);
+
         List<PostResponse> response = LongStream.range(offset, offset + size)
                 .mapToObj(i -> PostResponse.builder()
                         .id(i)
                         .title("글제목 " + i)
                         .content("글내용 " + i)
+                        .createdDateTime(createdDateTime)
                         .build())
                 .collect(Collectors.toList());
 
@@ -196,11 +206,15 @@ class PostControllerTest extends ControllerTestSupport {
         int menuId = 1;
         int offset = 1;
 
+        LocalDateTime createdDateTime =
+                LocalDateTime.of(2024, 1, 18, 23, 30, 30);
+
         List<PostResponse> response = LongStream.range(offset, offset + size)
                 .mapToObj(i -> PostResponse.builder()
                         .id(i)
                         .title("글제목 " + i)
                         .content("글내용 " + i)
+                        .createdDateTime(createdDateTime)
                         .build())
                 .collect(Collectors.toList());
 
@@ -227,11 +241,15 @@ class PostControllerTest extends ControllerTestSupport {
         int menuId = 1;
         int offset = 11;
 
+        LocalDateTime createdDateTime =
+                LocalDateTime.of(2024, 1, 18, 23, 30, 30);
+
         List<PostResponse> response = LongStream.range(offset, offset + size)
                 .mapToObj(i -> PostResponse.builder()
                         .id(i)
                         .title("글제목 " + i)
                         .content("글내용 " + i)
+                        .createdDateTime(createdDateTime)
                         .build())
                 .collect(Collectors.toList());
 

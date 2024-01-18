@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -77,6 +78,7 @@ class PostControllerDocsTest extends RestDocsSupport {
                         .id(postId)
                         .title("글제목 입니다.")
                         .content("글내용 입니다.")
+                        .createdDateTime(LocalDateTime.now())
                         .build()
                 );
         // when // then
@@ -94,7 +96,9 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data.title").type(JsonFieldType.STRING)
                                         .description("글 제목"),
                                 fieldWithPath("data.content").type(JsonFieldType.STRING)
-                                        .description("글 내용")
+                                        .description("글 내용"),
+                                fieldWithPath("data.createdDateTime").type(JsonFieldType.ARRAY)
+                                        .description("글 작성 시간")
                         )
                 ));
     }
@@ -112,6 +116,7 @@ class PostControllerDocsTest extends RestDocsSupport {
                         .id(i)
                         .title("글제목 " + i)
                         .content("글내용 " + i)
+                        .createdDateTime(LocalDateTime.now())
                         .build())
                 .collect(Collectors.toList());
 
@@ -144,7 +149,9 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("data[0].title").type(JsonFieldType.STRING)
                                         .description("글 제목"),
                                 fieldWithPath("data[0].content").type(JsonFieldType.STRING)
-                                        .description("글 내용")
+                                        .description("글 내용"),
+                                fieldWithPath("data[0].createdDateTime").type(JsonFieldType.ARRAY)
+                                        .description("글 작성 시간")
                         )
                 ));
 
