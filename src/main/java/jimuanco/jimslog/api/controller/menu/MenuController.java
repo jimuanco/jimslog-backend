@@ -5,6 +5,7 @@ import jimuanco.jimslog.api.controller.menu.request.MenuRequest;
 import jimuanco.jimslog.api.service.menu.MenuService;
 import jimuanco.jimslog.api.service.post.response.MenuResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +27,7 @@ public class MenuController {
         return DataResponse.of(menus, count);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/menus")
     public void changeMenus(@RequestBody List<MenuRequest> menuRequests) {
         menuService.changeMenus(menuRequests.stream()
