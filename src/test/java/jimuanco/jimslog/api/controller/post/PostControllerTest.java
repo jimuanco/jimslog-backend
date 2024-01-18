@@ -29,9 +29,11 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPost() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -47,9 +49,11 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostForUnauthenticatedUser() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -68,9 +72,11 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostForUserWithUserRole() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -88,8 +94,10 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostWithoutTitle() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -108,8 +116,10 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostWithoutContent() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -152,6 +162,7 @@ class PostControllerTest extends ControllerTestSupport {
         // given
         int page = 2;
         int size = 20;
+        int menuId = 1;
         int offset = 21;
 
         List<PostResponse> response = LongStream.range(offset, offset + size)
@@ -169,7 +180,8 @@ class PostControllerTest extends ControllerTestSupport {
         // when // then
         mockMvc.perform(get("/posts")
                         .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size)))
+                        .param("size", String.valueOf(size))
+                        .param("menu", String.valueOf(menuId)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
@@ -181,6 +193,7 @@ class PostControllerTest extends ControllerTestSupport {
     void getPostListWithoutPage() throws Exception {
         // given
         int size = 20;
+        int menuId = 1;
         int offset = 1;
 
         List<PostResponse> response = LongStream.range(offset, offset + size)
@@ -197,7 +210,8 @@ class PostControllerTest extends ControllerTestSupport {
 
         // when // then
         mockMvc.perform(get("/posts")
-                        .param("size", String.valueOf(size)))
+                        .param("size", String.valueOf(size))
+                        .param("menu", String.valueOf(menuId)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
@@ -210,6 +224,7 @@ class PostControllerTest extends ControllerTestSupport {
         // given
         int page = 2;
         int size = 10;
+        int menuId = 1;
         int offset = 11;
 
         List<PostResponse> response = LongStream.range(offset, offset + size)
@@ -226,7 +241,8 @@ class PostControllerTest extends ControllerTestSupport {
 
         // when // then
         mockMvc.perform(get("/posts")
-                        .param("page", String.valueOf(page)))
+                        .param("page", String.valueOf(page))
+                        .param("menu", String.valueOf(menuId)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
@@ -242,6 +258,28 @@ class PostControllerTest extends ControllerTestSupport {
         PostEditRequest request = PostEditRequest.builder()
                 .title("글제목을 수정했습니다.")
                 .content("글내용을 수정했습니다.")
+                .menuId(1)
+                .build();
+        String json = objectMapper.writeValueAsString(request);
+
+        // when // then
+        mockMvc.perform(patch("/posts/{postId}", postId)
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+    }
+
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
+    @DisplayName("글의 메뉴를 수정한다.")
+    @Test
+    void editPostMenu() throws Exception {
+        // given
+        Long postId = 1L;
+        PostEditRequest request = PostEditRequest.builder()
+                .title("글제목을 수정했습니다.")
+                .content("글내용을 수정했습니다.")
+                .menuId(2)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -261,6 +299,7 @@ class PostControllerTest extends ControllerTestSupport {
         PostEditRequest request = PostEditRequest.builder()
                 .title("글제목을 수정했습니다.")
                 .content("글내용을 수정했습니다.")
+                .menuId(1)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -283,6 +322,7 @@ class PostControllerTest extends ControllerTestSupport {
         PostEditRequest request = PostEditRequest.builder()
                 .title("글제목을 수정했습니다.")
                 .content("글내용을 수정했습니다.")
+                .menuId(1)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -303,6 +343,7 @@ class PostControllerTest extends ControllerTestSupport {
         Long postId = 1L;
         PostCreateRequest request = PostCreateRequest.builder()
                 .content("글내용 입니다.")
+                .menuId(1)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -324,6 +365,7 @@ class PostControllerTest extends ControllerTestSupport {
         Long postId = 1L;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
+                .menuId(1)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 

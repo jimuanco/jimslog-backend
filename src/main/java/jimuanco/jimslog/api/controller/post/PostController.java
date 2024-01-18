@@ -37,10 +37,12 @@ public class PostController {
     @GetMapping("/posts")
     public DataResponse<List<PostResponse>> getPostList( //todo 왜 ModelAttribute에 생성자 방식이 안먹히지?
             @RequestParam(name = "page", required = false, defaultValue = "1") int page,
-            @RequestParam(name = "size", required = false, defaultValue = "10") int size) {
+            @RequestParam(name = "size", required = false, defaultValue = "10") int size,
+            @RequestParam(name = "menu", required = false, defaultValue = "0") int menuId) {
         PostSearchServiceRequest serviceRequest = PostSearchServiceRequest.builder()
                 .page(page)
                 .size(size)
+                .menuId(menuId)
                 .build();
         return DataResponse.of(postService.getPostList(serviceRequest));
     }

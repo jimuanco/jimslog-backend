@@ -59,7 +59,9 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("title").type(JsonFieldType.STRING)
                                         .description("글 제목"),
                                 fieldWithPath("content").type(JsonFieldType.STRING)
-                                        .description("글 내용")
+                                        .description("글 내용"),
+                                fieldWithPath("menuId").type(JsonFieldType.NUMBER)
+                                        .description("메뉴 ID")
                         )
                 ));
     }
@@ -131,7 +133,10 @@ class PostControllerDocsTest extends RestDocsSupport {
                                         .attributes(key("default").value("1")),
                                 parameterWithName("size")
                                         .description("사이즈").optional()
-                                        .attributes(key("default").value("10"))
+                                        .attributes(key("default").value("10")),
+                                parameterWithName("menu")
+                                        .description("메뉴 ID, 0(default)으로 조회시 모든 게시글 조회").optional()
+                                        .attributes(key("default").value("0"))
                         ),
                         responseFields(
                                 fieldWithPath("data[0].id").type(JsonFieldType.NUMBER)
@@ -152,6 +157,7 @@ class PostControllerDocsTest extends RestDocsSupport {
         PostEditRequest request = PostEditRequest.builder()
                 .title("글제목을 수정했습니다.")
                 .content("글내용을 수정했습니다.")
+                .menuId(2)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -169,7 +175,9 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("title").type(JsonFieldType.STRING)
                                         .description("글 제목"),
                                 fieldWithPath("content").type(JsonFieldType.STRING)
-                                        .description("글 내용")
+                                        .description("글 내용"),
+                                fieldWithPath("menuId").type(JsonFieldType.NUMBER)
+                                        .description("수정할 메뉴 ID")
                         )
                 ));
     }

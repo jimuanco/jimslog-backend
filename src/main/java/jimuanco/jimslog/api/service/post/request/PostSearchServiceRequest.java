@@ -12,11 +12,13 @@ public class PostSearchServiceRequest {
     private static final int MAX_SIZE = 2000;
     private int page;
     private int size;
+    private int menuId;
 
     @Builder
-    private PostSearchServiceRequest(int page, int size) {
+    private PostSearchServiceRequest(int page, int size, int menuId) {
         this.page = page;
         this.size = size;
+        this.menuId = menuId;
     }
 
     public long getOffset() {

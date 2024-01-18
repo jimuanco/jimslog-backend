@@ -4,13 +4,17 @@ import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
+import jimuanco.jimslog.domain.menu.Menu;
+import jimuanco.jimslog.domain.menu.MenuRepository;
 import jimuanco.jimslog.domain.post.Post;
 import jimuanco.jimslog.domain.post.PostRepository;
+import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,9 +24,13 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final MenuRepository menuRepository;
 
     public void createPost(PostCreateServiceRequest serviceRequest) {
-        Post post = serviceRequest.toEntity();
+        long menuId = serviceRequest.getMenuId();
+        Menu menu = (menuId != 0) ? menuRepository.findById(menuId).orElseThrow(MenuNotFound::new) : null;
+
+        Post post = serviceRequest.toEntity(menu);
         postRepository.save(post);
     }
 
@@ -34,7 +42,17 @@ public class PostService {
     }
 
     public List<PostResponse> getPostList(PostSearchServiceRequest serviceRequest) {
-        return postRepository.getPostList(serviceRequest).stream()
+        List<Long> menuIdList = new ArrayList<>();
+
+        if(serviceRequest.getMenuId() != 0) {
+            Menu menu = menuRepository.findById((long) serviceRequest.getMenuId())
+                    .orElseThrow(MenuNotFound::new);
+            menuIdList.addAll(menu.getChildren().stream().map(Menu::getId).collect(Collectors.toList()));
+        }
+
+        menuIdList.add((long) serviceRequest.getMenuId());
+
+        return postRepository.getPostList(serviceRequest, menuIdList).stream()
                 .map(PostResponse::of)
                 .collect(Collectors.toList());
     }
@@ -44,7 +62,10 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(PostNotFound::new);
 
-        post.edit(serviceRequest.getTitle(), serviceRequest.getContent()); // todo editor class 만들지 고민
+        Menu menu = menuRepository.findById((long) serviceRequest.getMenuId())
+                .orElseThrow(MenuNotFound::new);
+
+        post.edit(serviceRequest.getTitle(), serviceRequest.getContent(), menu); // todo editor class 만들지 고민
     }
 
     @Transactional

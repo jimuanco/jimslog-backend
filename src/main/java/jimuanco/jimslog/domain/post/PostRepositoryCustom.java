@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface PostRepositoryCustom {
 
-    List<Post> getPostList(PostSearchServiceRequest postSearchServiceRequest);
+    List<Post> getPostList(PostSearchServiceRequest postSearchServiceRequest, List<Long> menuIdList);
 }

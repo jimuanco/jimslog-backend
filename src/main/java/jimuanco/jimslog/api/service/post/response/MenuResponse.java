@@ -41,5 +41,6 @@ public class MenuResponse {
                             .build();
                 })
                 .collect(Collectors.toList());
+        this.postsCount += menu.getPostList().size();
     }
 }

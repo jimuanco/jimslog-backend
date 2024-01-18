@@ -32,14 +32,16 @@ public class Post {
     private Menu menu;
 
     @Builder
-    public Post(String title, String content, User user) {
+    public Post(String title, String content, User user, Menu menu) {
         this.title = title;
         this.content = content;
         this.user = user;
+        this.menu = menu;
     }
 
-    public void edit(String title, String content) {
+    public void edit(String title, String content, Menu menu) {
         this.title = title;
         this.content = content;
+        this.menu = menu;
     }
 }
