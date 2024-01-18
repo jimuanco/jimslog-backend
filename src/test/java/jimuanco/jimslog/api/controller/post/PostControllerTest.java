@@ -162,6 +162,7 @@ class PostControllerTest extends ControllerTestSupport {
         // given
         int page = 2;
         int size = 20;
+        int menuId = 1;
         int offset = 21;
 
         List<PostResponse> response = LongStream.range(offset, offset + size)
@@ -179,7 +180,8 @@ class PostControllerTest extends ControllerTestSupport {
         // when // then
         mockMvc.perform(get("/posts")
                         .param("page", String.valueOf(page))
-                        .param("size", String.valueOf(size)))
+                        .param("size", String.valueOf(size))
+                        .param("menu", String.valueOf(menuId)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
@@ -191,6 +193,7 @@ class PostControllerTest extends ControllerTestSupport {
     void getPostListWithoutPage() throws Exception {
         // given
         int size = 20;
+        int menuId = 1;
         int offset = 1;
 
         List<PostResponse> response = LongStream.range(offset, offset + size)
@@ -207,7 +210,8 @@ class PostControllerTest extends ControllerTestSupport {
 
         // when // then
         mockMvc.perform(get("/posts")
-                        .param("size", String.valueOf(size)))
+                        .param("size", String.valueOf(size))
+                        .param("menu", String.valueOf(menuId)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
@@ -220,6 +224,7 @@ class PostControllerTest extends ControllerTestSupport {
         // given
         int page = 2;
         int size = 10;
+        int menuId = 1;
         int offset = 11;
 
         List<PostResponse> response = LongStream.range(offset, offset + size)
@@ -236,7 +241,8 @@ class PostControllerTest extends ControllerTestSupport {
 
         // when // then
         mockMvc.perform(get("/posts")
-                        .param("page", String.valueOf(page)))
+                        .param("page", String.valueOf(page))
+                        .param("menu", String.valueOf(menuId)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isArray())
