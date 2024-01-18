@@ -62,7 +62,10 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(PostNotFound::new);
 
-        post.edit(serviceRequest.getTitle(), serviceRequest.getContent()); // todo editor class 만들지 고민
+        Menu menu = menuRepository.findById((long) serviceRequest.getMenuId())
+                .orElseThrow(MenuNotFound::new);
+
+        post.edit(serviceRequest.getTitle(), serviceRequest.getContent(), menu); // todo editor class 만들지 고민
     }
 
     @Transactional

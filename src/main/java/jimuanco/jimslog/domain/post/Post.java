@@ -39,8 +39,9 @@ public class Post {
         this.menu = menu;
     }
 
-    public void edit(String title, String content) {
+    public void edit(String title, String content, Menu menu) {
         this.title = title;
         this.content = content;
+        this.menu = menu;
     }
 }

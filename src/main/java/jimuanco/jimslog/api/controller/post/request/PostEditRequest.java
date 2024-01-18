@@ -16,16 +16,20 @@ public class PostEditRequest {
     @NotBlank(message = "내용을 입력해주세요.")
     private String content;
 
+    private int menuId;
+
     @Builder
-    private PostEditRequest(String title, String content) {
+    private PostEditRequest(String title, String content, int menuId) {
         this.title = title;
         this.content = content;
+        this.menuId = menuId;
     }
 
     public PostEditServiceRequest toServiceRequest() {
         return PostEditServiceRequest.builder()
                 .title(title)
                 .content(content)
+                .menuId(menuId)
                 .build();
     }
 }
