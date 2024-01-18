@@ -29,9 +29,11 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPost() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -47,9 +49,11 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostForUnauthenticatedUser() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -68,9 +72,11 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostForUserWithUserRole() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -88,8 +94,10 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostWithoutTitle() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .content("글내용 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -108,8 +116,10 @@ class PostControllerTest extends ControllerTestSupport {
     @Test
     void createPostWithoutContent() throws Exception {
         // given
+        int menuId= 1;
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
+                .menuId(menuId)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
