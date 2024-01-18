@@ -28,7 +28,7 @@ public class PostService {
 
     public void createPost(PostCreateServiceRequest serviceRequest) {
         long menuId = serviceRequest.getMenuId();
-        Menu menu = (menuId != 0) ? menuRepository.findById(menuId).orElseThrow(PostNotFound::new) : null;
+        Menu menu = (menuId != 0) ? menuRepository.findById(menuId).orElseThrow(MenuNotFound::new) : null;
 
         Post post = serviceRequest.toEntity(menu);
         postRepository.save(post);
