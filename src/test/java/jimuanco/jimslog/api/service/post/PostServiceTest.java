@@ -127,8 +127,8 @@ class PostServiceTest {
 
         // then
         assertThat(response)
-                .extracting("title", "content")
-                .contains("글제목 입니다.", "글내용 입니다.");
+                .extracting("title", "content", "createdDateTime")
+                .contains("글제목 입니다.", "글내용 입니다.", post.getCreatedDateTime());
     }
 
     @DisplayName("존재하지 않는 글ID로 글을 조회하면 예외가 발생한다.")
@@ -193,11 +193,11 @@ class PostServiceTest {
 
         // then
         assertThat(postList).hasSize(3)
-                .extracting("title", "content")
+                .extracting("title", "content", "createdDateTime")
                 .containsExactly(
-                        tuple("글제목3", "글내용3"),
-                        tuple("글제목2", "글내용2"),
-                        tuple("글제목1", "글내용1")
+                        tuple("글제목3", "글내용3", post3.getCreatedDateTime()),
+                        tuple("글제목2", "글내용2", post2.getCreatedDateTime()),
+                        tuple("글제목1", "글내용1", post1.getCreatedDateTime())
                 );
     }
 
@@ -253,11 +253,11 @@ class PostServiceTest {
 
         // then
         assertThat(postList).hasSize(3)
-                .extracting("title", "content")
+                .extracting("title", "content", "createdDateTime")
                 .containsExactly(
-                        tuple("글제목3", "글내용3"),
-                        tuple("글제목2", "글내용2"),
-                        tuple("글제목1", "글내용1")
+                        tuple("글제목3", "글내용3", post3.getCreatedDateTime()),
+                        tuple("글제목2", "글내용2", post2.getCreatedDateTime()),
+                        tuple("글제목1", "글내용1", post1.getCreatedDateTime())
                 );
     }
 
