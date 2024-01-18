@@ -157,6 +157,7 @@ class PostControllerDocsTest extends RestDocsSupport {
         PostEditRequest request = PostEditRequest.builder()
                 .title("글제목을 수정했습니다.")
                 .content("글내용을 수정했습니다.")
+                .menuId(2)
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -174,7 +175,9 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("title").type(JsonFieldType.STRING)
                                         .description("글 제목"),
                                 fieldWithPath("content").type(JsonFieldType.STRING)
-                                        .description("글 내용")
+                                        .description("글 내용"),
+                                fieldWithPath("menuId").type(JsonFieldType.NUMBER)
+                                        .description("수정할 메뉴 ID")
                         )
                 ));
     }
