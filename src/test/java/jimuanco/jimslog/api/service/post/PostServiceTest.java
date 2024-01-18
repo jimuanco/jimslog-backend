@@ -5,8 +5,11 @@ import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
+import jimuanco.jimslog.domain.menu.Menu;
+import jimuanco.jimslog.domain.menu.MenuRepository;
 import jimuanco.jimslog.domain.post.Post;
 import jimuanco.jimslog.domain.post.PostRepository;
+import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -31,9 +35,12 @@ class PostServiceTest {
     @Autowired
     private PostRepository postRepository;
 
-    @DisplayName("새로운 글을 등록한다.")
+    @Autowired
+    private MenuRepository menuRepository;
+
+    @DisplayName("새로운 글을 등록할때 munuId를 넣지 않으면 메뉴가 지정되지 않는다.")
     @Test
-    void createPost() {
+    void createPostWithoutMenuId() {
         // given
         PostCreateServiceRequest request = PostCreateServiceRequest.builder()
                 .title("글제목 입니다.")
@@ -46,10 +53,63 @@ class PostServiceTest {
         // then
         List<Post> posts = postRepository.findAll();
         assertThat(posts).hasSize(1)
-                .extracting("title", "content")
+                .extracting("title", "content", "menu")
                 .contains(
-                        tuple("글제목 입니다.", "글내용 입니다.")
+                        tuple("글제목 입니다.", "글내용 입니다.", null)
                 );
+    }
+
+    @DisplayName("새로운 글을 등록할때 munuId를 넣으면 메뉴가 지정된다.")
+    @Test
+    void createPostWithMenuId() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(mainMenu1.getId()))
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        List<Post> posts = postRepository.findAll();
+        assertThat(posts).hasSize(1)
+                .extracting("title", "content", "menu")
+                .contains(
+                        tuple("글제목 입니다.", "글내용 입니다.", mainMenu1)
+                );
+    }
+
+    @DisplayName("존재하지 않는 munuId로 새로운 글을 등록하면 예외가 발생한다.")
+    @Test
+    void createPostWithNonExistingMenuId() {
+        // given
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(1)
+                .build();
+
+        // when // then
+        List<Post> posts = postRepository.findAll();
+        assertThatThrownBy(() -> postService.createPost(request))
+                .isInstanceOf(MenuNotFound.class)
+                .hasMessage("존재하지 않는 메뉴입니다.");
     }
 
     @DisplayName("글 1개 조회한다.")
