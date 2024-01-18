@@ -28,6 +28,10 @@ class MenuResponseTest {
                 .title("글제목3")
                 .content("글내용3")
                 .build();
+        Post post4 = Post.builder()
+                .title("글제목4")
+                .content("글내용4")
+                .build();
 
         Menu subMenu1_1 = Menu.builder()
                 .name("1-1. 메뉴")
@@ -47,13 +51,13 @@ class MenuResponseTest {
                 .name("1. 메뉴")
                 .listOrder(1)
                 .children(List.of(subMenu1_1, subMenu1_2))
-                .postList(new ArrayList<>())
+                .postList(List.of(post4))
                 .build();
         // when
         MenuResponse menuResponse = new MenuResponse(mainMenu1);
 
         // then
-        assertThat(menuResponse.getPostsCount()).isEqualTo(3);
+        assertThat(menuResponse.getPostsCount()).isEqualTo(4);
         assertThat(menuResponse.getChildren().get(0).getPostsCount()).isEqualTo(2);
         assertThat(menuResponse.getChildren().get(1).getPostsCount()).isEqualTo(1);
     }
