@@ -1,6 +1,7 @@
 package jimuanco.jimslog.domain.post;
 
 import jakarta.persistence.*;
+import jimuanco.jimslog.domain.BaseEntity;
 import jimuanco.jimslog.domain.menu.Menu;
 import jimuanco.jimslog.domain.user.User;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import static lombok.AccessLevel.PROTECTED;
 @Getter
 @NoArgsConstructor(access = PROTECTED)
 @Entity
-public class Post {
+public class Post extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = IDENTITY)
