@@ -265,9 +265,24 @@ class PostServiceTest {
     @Test
     void editPostTitle() {
         // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
         Post post = Post.builder()
                 .title("글제목")
                 .content("글내용")
+                .menu(subMenu1_1)
                 .build();
         postRepository.save(post);
 
@@ -277,6 +292,7 @@ class PostServiceTest {
         PostEditServiceRequest request = PostEditServiceRequest.builder()
                 .title("글제목 수정")
                 .content("글내용")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
                 .build();
 
         // when
@@ -290,15 +306,31 @@ class PostServiceTest {
                 .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
         assertThat(editedPost.getTitle()).isEqualTo("글제목 수정");
         assertThat(editedPost.getContent()).isEqualTo("글내용");
+        assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_1.getId());
     }
 
     @DisplayName("글 내용을 수정한다.")
     @Test
     void editPostContent() {
         // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
         Post post = Post.builder()
                 .title("글제목")
                 .content("글내용")
+                .menu(subMenu1_1)
                 .build();
         postRepository.save(post);
 
@@ -308,6 +340,7 @@ class PostServiceTest {
         PostEditServiceRequest request = PostEditServiceRequest.builder()
                 .title("글제목")
                 .content("글내용 수정")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
                 .build();
 
         // when
@@ -321,15 +354,85 @@ class PostServiceTest {
                 .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
         assertThat(editedPost.getTitle()).isEqualTo("글제목");
         assertThat(editedPost.getContent()).isEqualTo("글내용 수정");
+        assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_1.getId());
+    }
+
+    @DisplayName("글 메뉴를 수정한다.")
+    @Test
+    void editPostMenu() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu subMenu1_2 = Menu.builder()
+                .name("1-2. 메뉴")
+                .listOrder(2)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1, subMenu1_2))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        em.flush(); // todo @Transactional 대신 tearDown() 쓸지 고민
+        em.clear();
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목")
+                .content("글내용")
+                .menuId(Math.toIntExact(subMenu1_2.getId()))
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        em.flush();
+        em.clear();
+
+        // then
+        Post editedPost = postRepository.findById(post.getId())
+                .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
+        assertThat(editedPost.getTitle()).isEqualTo("글제목");
+        assertThat(editedPost.getContent()).isEqualTo("글내용");
+        assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_2.getId());
     }
 
     @DisplayName("존재하지 않는 글ID의 글을 수정할 시 예외가 발생한다.")
     @Test
-    void editPostByNonExistingId() {
+    void editPostByNonExistingMenuId() {
         // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
         Post post = Post.builder()
                 .title("글제목")
                 .content("글내용")
+                .menu(subMenu1_1)
                 .build();
         postRepository.save(post);
 
@@ -339,6 +442,7 @@ class PostServiceTest {
         PostEditServiceRequest request = PostEditServiceRequest.builder()
                 .title("글제목 수정")
                 .content("글내용 수정")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
                 .build();
 
         // when // then
@@ -353,6 +457,56 @@ class PostServiceTest {
                 .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
         assertThat(editedPost.getTitle()).isEqualTo("글제목");
         assertThat(editedPost.getContent()).isEqualTo("글내용");
+        assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_1.getId());
+    }
+
+    @DisplayName("존재하지 않는 메뉴ID로 글을 수정할 시 예외가 발생한다.")
+    @Test
+    void editPostByNonExistingId() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        em.flush(); // todo @Transactional 대신 tearDown() 쓸지 고민
+        em.clear();
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 수정")
+                .content("글내용 수정")
+                .menuId(Math.toIntExact(subMenu1_1.getId() + 1))
+                .build();
+
+        // when // then
+        assertThatThrownBy(() -> postService.editPost(post.getId(), request))
+                .isInstanceOf(MenuNotFound.class)
+                .hasMessage("존재하지 않는 메뉴입니다.");
+
+        em.flush();
+        em.clear();
+
+        Post editedPost = postRepository.findById(post.getId())
+                .orElseThrow(() -> new RuntimeException("글이 존재하지 않습니다. id = " + post.getId()));
+        assertThat(editedPost.getTitle()).isEqualTo("글제목");
+        assertThat(editedPost.getContent()).isEqualTo("글내용");
+        assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_1.getId());
     }
 
     @DisplayName("글을 삭제한다.")
