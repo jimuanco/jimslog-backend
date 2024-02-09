@@ -14,6 +14,7 @@ import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Service
@@ -49,9 +51,7 @@ public class PostService {
         Post post = serviceRequest.toEntity(menu);
         postRepository.save(post);
 
-        processImageUploadsForPost(serviceRequest.getUploadImageUrls(), post);
-        deleteS3Images(serviceRequest.getDeleteImageUrls());
-        deleteDbImages(serviceRequest.getDeleteImageUrls());
+        processImagesForPost(serviceRequest.getUploadImageUrls(), post.getId(), serviceRequest.getDeleteImageUrls());
     }
 
     public PostResponse getPost(Long postId) {
@@ -87,9 +87,7 @@ public class PostService {
 
         post.edit(serviceRequest.getTitle(), serviceRequest.getContent(), menu); // todo editor class 만들지 고민
 
-        processImageUploadsForPost(serviceRequest.getUploadImageUrls(), post);
-        deleteS3Images(serviceRequest.getDeleteImageUrls());
-        deleteDbImages(serviceRequest.getDeleteImageUrls());
+        processImagesForPost(serviceRequest.getUploadImageUrls(), post.getId(), serviceRequest.getDeleteImageUrls());
     }
 
     @Transactional
@@ -107,13 +105,29 @@ public class PostService {
         postImageRepository.deleteAllInBatch(deletePostImages);
     }
 
-    private void processImageUploadsForPost(List<String> uploadImageUrls, Post post) {
+    private void processImagesForPost(List<String> uploadImageUrls, Long postId, List<String> deleteImageUrls) {
+        if (uploadImageUrls.size() != 0) {
+            processImageUploadsForPost(uploadImageUrls, postId);
+        }
+
+        if (deleteImageUrls.size() != 0) {
+            deleteS3Images(deleteImageUrls);
+            deleteDbImages(deleteImageUrls);
+        }
+    }
+
+    private void processImageUploadsForPost(List<String> uploadImageUrls, Long postId) {
         uploadImageUrls.stream()
                 .map(uploadImageUrl -> extractFileNameFromImageUrl(uploadImageUrl))
-                .forEach(fileName -> updatePostIdForPostImage(fileName, post.getId()));
+                .filter(fileName -> (fileName != ""))
+                .forEach(fileName -> updatePostIdForPostImage(fileName, postId));
     }
 
     private String extractFileNameFromImageUrl(String imageUrl) {
+        if (!imageUrl.startsWith(s3Url) || imageUrl.length() <= s3Url.length()) {
+            return "";
+        }
+
         imageUrl.substring(s3Url.length() + 1);
         String encodigString = imageUrl.substring(s3Url.length() + 1);
         String decodingString;
@@ -126,23 +140,30 @@ public class PostService {
     }
 
     private void updatePostIdForPostImage(String fileName, Long postId) {
-        PostImage postImage = postImageRepository.findByFileName(fileName)
-                .orElseThrow(() -> new RuntimeException("이미지 파일이 존재하지 않습니다."));
-        postImage.updatePostId(postId);
+        try {
+            PostImage postImage = postImageRepository.findByFileName(fileName)
+                    .orElseThrow(() -> new RuntimeException("이미지 파일이 존재하지 않습니다."));
+            postImage.updatePostId(postId);
+        } catch(RuntimeException e) {
+            log.info(e.getMessage());
+        }
     }
 
     private void deleteDbImages(List<String> deleteDbImageUrls) {
         List<String> deleteFileNames = deleteDbImageUrls.stream()
                 .map(deleteImageUrl -> extractFileNameFromImageUrl(deleteImageUrl))
+                .filter(fileName -> (fileName != ""))
                 .collect(Collectors.toList());
-        postImageRepository.deleteAllByFileNameInQuery(deleteFileNames);
+
+        if (deleteFileNames.size() != 0) {
+            postImageRepository.deleteAllByFileNameInQuery(deleteFileNames);
+        }
     }
 
     private void deleteS3Images(List<String> deleteImageUrls) {
-        deleteImageUrls
-                .forEach(deleteImageUrl -> {
-                    String FileName = extractFileNameFromImageUrl(deleteImageUrl);
-                    amazonS3.deleteObject(bucket, FileName);
-                });
+        deleteImageUrls.stream()
+                .map(deleteImageUrl -> extractFileNameFromImageUrl(deleteImageUrl))
+                .filter(fileName -> (fileName != ""))
+                .forEach(fileName -> amazonS3.deleteObject(bucket, fileName));
     }
 }

@@ -1,10 +1,8 @@
 package jimuanco.jimslog.api.service.post;
 
-import io.findify.s3mock.S3Mock;
 import jimuanco.jimslog.IntegrationTestSupport;
 import jimuanco.jimslog.domain.post.PostImage;
 import jimuanco.jimslog.domain.post.PostImageRepository;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +23,10 @@ class S3UploaderTest extends IntegrationTestSupport {
     @Autowired
     private PostImageRepository postImageRepository;
 
-    @AfterAll
-    static void tearDown(@Autowired S3Mock s3Mock) {
-        s3Mock.stop();
-    }
+//    @AfterAll
+//    static void tearDown(@Autowired S3Mock s3Mock) {
+//        s3Mock.stop();
+//    }
 
     @DisplayName("S3에 이미지파일을 업로드 한다.")
     @Test
