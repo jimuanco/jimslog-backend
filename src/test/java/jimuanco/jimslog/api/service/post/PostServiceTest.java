@@ -2,7 +2,6 @@ package jimuanco.jimslog.api.service.post;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import io.findify.s3mock.S3Mock;
 import jakarta.persistence.EntityManager;
 import jimuanco.jimslog.IntegrationTestSupport;
 import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
@@ -17,7 +16,6 @@ import jimuanco.jimslog.domain.post.PostImageRepository;
 import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,10 +62,10 @@ class PostServiceTest extends IntegrationTestSupport {
     @Autowired
     private PostImageRepository postImageRepository;
 
-    @AfterAll
-    static void tearDown(@Autowired S3Mock s3Mock) {
-        s3Mock.stop();
-    }
+//    @AfterAll
+//    static void tearDown(@Autowired S3Mock s3Mock) {
+//        s3Mock.stop();
+//    }
 
     @DisplayName("새로운 글을 등록할때 munuId를 넣지 않으면 메뉴가 지정되지 않는다.")
     @Test
@@ -218,6 +216,243 @@ class PostServiceTest extends IntegrationTestSupport {
                         tuple(post.getId(), fileName3),
                         tuple(post.getId(), fileName5)
                 );
+    }
+
+    @DisplayName("새로운 글을 등록할때 uploadImageUrl이 정확하면 Post Image에 PostId를 업데이트 한다.")
+    @Test
+    void createPostWithExactUploadImageUrl() {
+        // given
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url +  "/" + dirName + "/image1)")
+                .uploadImageUrls(List.of(s3Url + "/" + dirName + "/image1"))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+        Post post = postRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isEqualTo(post.getId());
+    }
+
+    @DisplayName("새로운 글을 등록할때 " +
+            "uploadImageUrl에서 S3 Url과 Directory Name이 정확하지 않으면 Post Image에 PostId를 업데이트하지 않는다.")
+    @Test
+    void createPostWithInexactUploadImageUrl() {
+        // given
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url +  "a/" + dirName + "/image1)")
+                .uploadImageUrls(List.of(s3Url + "a/" + dirName + "/image1"))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isNull();
+    }
+
+    @DisplayName("새로운 글을 등록할때 " +
+            "uploadImageUrl에서 S3 Url만 입력하면 Post Image에 PostId를 업데이트하지 않는다.")
+    @Test
+    void createPostWithOnlyS3UrlInUploadImageUrl() {
+        // given
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url + ")")
+                .uploadImageUrls(List.of(s3Url))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isNull();
+    }
+
+    @DisplayName("새로운 글을 등록할때 " +
+            "uploadImageUrl에서 Image 파일 이름이 정확하지 않으면 Post Image에 PostId를 업데이트하지 않는다.")
+    @Test
+    void createPostWithInexactUploadImageName() {
+        // given
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url +  "/" + dirName + "/image2)")
+                .uploadImageUrls(List.of(s3Url + "/" + dirName + "/image2"))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isNull();
+    }
+
+    @DisplayName("새로운 글을 등록할때 deleteImageUrl이 정확하면 Post Image를 S3와 Db에서 삭제한다.")
+    @Test
+    void createPostWithExactDeleteImageUrl() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of(uploadImageUrl1))
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName1))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThat(postImages).hasSize(0);
+    }
+
+    @DisplayName("새로운 글을 등록할때 " +
+            "deleteImageUrl에서 S3 Url과 Directory Name이 정확하지 않으면 Post Image를 S3와 Db에서 삭제하지 않는다.")
+    @Test
+    void createPostWithInexactDeleteImageUrl() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of("a" + uploadImageUrl1))
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(postImages).hasSize(1);
+    }
+
+    @DisplayName("새로운 글을 등록할때 " +
+            "deleteImageUrl에서 S3 Url만 입력하면 Post Image를 S3와 Db에서 삭제하지 않는다.")
+    @Test
+    void createPostWithOnlyS3UrlInDeleteImageUrl() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of(s3Url))
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(postImages).hasSize(1);
+    }
+
+    @DisplayName("새로운 글을 등록할때 " +
+            "deleteImageUrl에서 Image 파일 이름이 정확하지 않으면 Post Image를 S3와 Db에서 삭제하지 않는다.")
+    @Test
+    void createPostWithInexactDeleteImageName() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of(s3Url + "/" + dirName + "/a"))
+                .build();
+
+        // when
+        assertThatThrownBy(() -> postService.createPost(request))
+                .isInstanceOf(AmazonS3Exception.class);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(postImages).hasSize(1);
     }
 
     @DisplayName("글 1개 조회한다.")
