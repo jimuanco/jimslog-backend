@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 public class PostEditRequest {
@@ -18,11 +20,19 @@ public class PostEditRequest {
 
     private int menuId;
 
+    private List<String> uploadImageUrls;
+
+    private List<String> deleteImageUrls;
+
     @Builder
-    private PostEditRequest(String title, String content, int menuId) {
+    private PostEditRequest(String title, String content, int menuId,
+                            List<String> uploadImageUrls,
+                            List<String> deleteImageUrls) {
         this.title = title;
         this.content = content;
         this.menuId = menuId;
+        this.uploadImageUrls = uploadImageUrls;
+        this.deleteImageUrls = deleteImageUrls;
     }
 
     public PostEditServiceRequest toServiceRequest() {
@@ -30,6 +40,8 @@ public class PostEditRequest {
                 .title(title)
                 .content(content)
                 .menuId(menuId)
+                .uploadImageUrls(uploadImageUrls)
+                .deleteImageUrls(deleteImageUrls)
                 .build();
     }
 }
