@@ -7,6 +7,7 @@ import jimuanco.jimslog.api.controller.post.PostController;
 import jimuanco.jimslog.api.service.auth.AuthService;
 import jimuanco.jimslog.api.service.menu.MenuService;
 import jimuanco.jimslog.api.service.post.PostService;
+import jimuanco.jimslog.api.service.post.S3Uploader;
 import jimuanco.jimslog.config.SecurityConfig;
 import jimuanco.jimslog.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,4 +38,7 @@ public abstract class ControllerTestSupport {
 
     @MockBean
     protected MenuService menuService;
+
+    @MockBean
+    protected S3Uploader s3Uploader;
 }
