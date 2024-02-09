@@ -401,6 +401,8 @@ class PostServiceTest extends IntegrationTestSupport {
                 .title("글제목 수정")
                 .content("글내용")
                 .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -449,6 +451,8 @@ class PostServiceTest extends IntegrationTestSupport {
                 .title("글제목")
                 .content("글내용 수정")
                 .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -503,6 +507,8 @@ class PostServiceTest extends IntegrationTestSupport {
                 .title("글제목")
                 .content("글내용")
                 .menuId(Math.toIntExact(subMenu1_2.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -615,6 +621,102 @@ class PostServiceTest extends IntegrationTestSupport {
         assertThat(editedPost.getTitle()).isEqualTo("글제목");
         assertThat(editedPost.getContent()).isEqualTo("글내용");
         assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_1.getId());
+    }
+
+    @DisplayName("글을 수정할때 S3와 DB에는 최종 등록하는 글의 이미지들만 남아있다.")
+    @Test
+    void editPostWithImages() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        MockMultipartFile image2 = new MockMultipartFile("postImage",
+                "image2.png",
+                "image/png",
+                "<<image2.png>>".getBytes());
+
+        MockMultipartFile image3 = new MockMultipartFile("postImage",
+                "image3.png",
+                "image/png",
+                "<<image3.png>>".getBytes());
+
+        String uploadImageUrl1 = s3Uploader.upload(image1, "images").replace(localS3, s3Url);
+        String uploadImageUrl2 = s3Uploader.upload(image2, "images").replace(localS3, s3Url);
+        String uploadImageUrl3 = s3Uploader.upload(image3, "images").replace(localS3, s3Url);
+
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        MockMultipartFile image4 = new MockMultipartFile("postImage",
+                "image4.png",
+                "image/png",
+                "<<image4.png>>".getBytes());
+
+        MockMultipartFile image5 = new MockMultipartFile("postImage",
+                "image5.png",
+                "image/png",
+                "<<image5.png>>".getBytes());
+
+        String uploadImageUrl4 = s3Uploader.upload(image4, "images").replace(localS3, s3Url);
+        String uploadImageUrl5 = s3Uploader.upload(image5, "images").replace(localS3, s3Url);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(List.of(uploadImageUrl5))
+                .deleteImageUrls(List.of(uploadImageUrl2, uploadImageUrl4))
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+        Post EditedPost = postRepository.findAll().get(0);
+
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+        String fileName2 = uploadImageUrl2.substring(s3Url.length() + 1);
+        String fileName3 = uploadImageUrl3.substring(s3Url.length() + 1);
+        String fileName4 = uploadImageUrl4.substring(s3Url.length() + 1);
+        String fileName5 = uploadImageUrl5.substring(s3Url.length() + 1);
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(amazonS3.getObject(bucket, fileName3).getKey()).isEqualTo(fileName3);
+        assertThat(amazonS3.getObject(bucket, fileName5).getKey()).isEqualTo(fileName5);
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName2))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName4))
+                .isInstanceOf(AmazonS3Exception.class);
+
+        assertThat(postImages).hasSize(3)
+                .extracting("postId", "fileName")
+                .contains(
+                        tuple(null, fileName1),
+                        tuple(null, fileName3),
+                        tuple(EditedPost.getId(), fileName5)
+                );
     }
 
     @DisplayName("글을 삭제한다.")
