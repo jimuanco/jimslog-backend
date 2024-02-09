@@ -735,4 +735,60 @@ class PostServiceTest extends IntegrationTestSupport {
         // then
         assertThat(postRepository.count()).isEqualTo(0);
     }
+
+    @DisplayName("글을 삭제할때 글에 포함된 이미지는 S3와 DB에서 삭제된다.")
+    @Test
+    void deletePostWithImages() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        MockMultipartFile image2 = new MockMultipartFile("postImage",
+                "image2.png",
+                "image/png",
+                "<<image2.png>>".getBytes());
+
+        String uploadImageUrl1 = s3Uploader.upload(image1, "images").replace(localS3, s3Url);
+        String uploadImageUrl2 = s3Uploader.upload(image2, "images").replace(localS3, s3Url);
+
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        postImageRepository.findAll().stream()
+                .forEach(postImage -> postImage.updatePostId(post.getId()));
+
+        // when
+        postService.deletePost(post.getId());
+
+        // then
+        assertThat(postImageRepository.findAll()).hasSize(0);
+
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+        String fileName2 = uploadImageUrl2.substring(s3Url.length() + 1);
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName1))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName2))
+                .isInstanceOf(AmazonS3Exception.class);
+    }
 }
