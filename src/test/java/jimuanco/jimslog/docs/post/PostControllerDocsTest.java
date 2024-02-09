@@ -49,12 +49,15 @@ class PostControllerDocsTest extends RestDocsSupport {
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(1)
+                .uploadImageUrls(List.of("URL1", "URL2"))
+                .deleteImageUrls(List.of("URL3", "URL4"))
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
         mockMvc.perform(post("/posts")
-                .content(json)
-                .contentType(APPLICATION_JSON))
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andDo(document("post-create",
@@ -65,7 +68,11 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("content").type(JsonFieldType.STRING)
                                         .description("글 내용"),
                                 fieldWithPath("menuId").type(JsonFieldType.NUMBER)
-                                        .description("메뉴 ID")
+                                        .description("메뉴 ID"),
+                                fieldWithPath("uploadImageUrls").type(JsonFieldType.ARRAY)
+                                        .description("최종적으로 등록할 Image URL"),
+                                fieldWithPath("deleteImageUrls").type(JsonFieldType.ARRAY)
+                                        .description("최종적으로 등록하지 않을 Image URL")
                         )
                 ));
     }
