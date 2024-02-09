@@ -1,6 +1,7 @@
 package jimuanco.jimslog.api.service.auth;
 
 import jakarta.persistence.EntityManager;
+import jimuanco.jimslog.IntegrationTestSupport;
 import jimuanco.jimslog.api.service.auth.request.LoginServiceRequest;
 import jimuanco.jimslog.api.service.auth.request.SignupServiceRequest;
 import jimuanco.jimslog.api.service.auth.response.TokenResponse;
@@ -13,7 +14,6 @@ import jimuanco.jimslog.utils.JwtUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
-@SpringBootTest
-class AuthServiceTest {
+class AuthServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private AuthService authService;

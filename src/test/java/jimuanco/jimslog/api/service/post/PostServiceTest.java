@@ -1,6 +1,7 @@
 package jimuanco.jimslog.api.service.post;
 
 import jakarta.persistence.EntityManager;
+import jimuanco.jimslog.IntegrationTestSupport;
 import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
@@ -23,8 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 @Transactional
-@SpringBootTest
-class PostServiceTest {
+class PostServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private EntityManager em;
