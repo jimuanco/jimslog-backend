@@ -96,8 +96,15 @@ public class PostService {
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(PostNotFound::new);
-
         postRepository.delete(post);
+
+        List<PostImage> deletePostImages = postImageRepository.findAllByPostId(post.getId());
+
+        deletePostImages.stream()
+                .map(deletePostImage -> deletePostImage.getFileName())
+                .forEach(fileName -> amazonS3.deleteObject(bucket, fileName));
+
+        postImageRepository.deleteAllInBatch(deletePostImages);
     }
 
     private void processImageUploadsForPost(List<String> uploadImageUrls, Post post) {
