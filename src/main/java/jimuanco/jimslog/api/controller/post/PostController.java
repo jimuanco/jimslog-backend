@@ -5,12 +5,15 @@ import jimuanco.jimslog.api.DataResponse;
 import jimuanco.jimslog.api.controller.post.request.PostCreateRequest;
 import jimuanco.jimslog.api.controller.post.request.PostEditRequest;
 import jimuanco.jimslog.api.service.post.PostService;
+import jimuanco.jimslog.api.service.post.S3Uploader;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.CREATED;
@@ -21,6 +24,7 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 public class PostController {
 
     private final PostService postService;
+    private final S3Uploader s3Uploader;
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @ResponseStatus(CREATED)
@@ -59,5 +63,12 @@ public class PostController {
     @DeleteMapping("/posts/{postId}")
     public void deletePost(@PathVariable(name = "postId") Long postId) {
         postService.deletePost(postId);
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping("/posts/image")
+    public DataResponse<String> uploadPostImage (
+            @RequestParam("postImage") MultipartFile multipartFile) throws IOException {
+        return DataResponse.of(s3Uploader.upload(multipartFile, "images"));
     }
 }

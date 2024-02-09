@@ -7,6 +7,7 @@ import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -133,6 +135,63 @@ class PostControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.code").value("400"))
                 .andExpect(jsonPath("$.message").value("잘못된 요청입니다."))
                 .andExpect(jsonPath("$.validation.content").value("내용을 입력해주세요."));
+    }
+
+    @WithMockUser(username = "jim@gmail.com", roles = {"ADMIN"})
+    @DisplayName("글에 이미지를 등록한다.")
+    @Test
+    void uploadPostImage() throws Exception {
+        // given
+        MockMultipartFile image = new MockMultipartFile("postImage",
+                "image.png",
+                "image/png",
+                "<<image.png>>".getBytes());
+
+        // when // then
+        mockMvc.perform(multipart("/posts/image")
+                        .file(image)
+                        .contentType(MULTIPART_FORM_DATA))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @DisplayName("글에 이미지를 등록할때 인증되지 않은 사용자는 등록할 수 없다.")
+    @Test
+    void uploadPostImageForUnauthenticatedUser() throws Exception {
+        // given
+        MockMultipartFile image = new MockMultipartFile("postImage",
+                "image.png",
+                "image/png",
+                "<<image.png>>".getBytes());
+
+        // when // then
+        mockMvc.perform(multipart("/posts/image")
+                        .file(image)
+                        .contentType(MULTIPART_FORM_DATA))
+                .andDo(print())
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("401"))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 Access Token입니다."));
+    }
+
+    @WithMockUser(username = "jim@gmail.com", roles = {"USER"})
+    @DisplayName("유저 권한만 가진 사용자는 글에 이미지를 등록할 수 없다.")
+    @Test
+    void uploadPostImageForUserWithUserRole() throws Exception {
+        // given
+        MockMultipartFile image = new MockMultipartFile("postImage",
+                "image.png",
+                "image/png",
+                "<<image.png>>".getBytes());
+
+        // when // then
+        mockMvc.perform(multipart("/posts/image")
+                        .file(image)
+                        .contentType(MULTIPART_FORM_DATA))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("403"))
+                .andExpect(jsonPath("$.message").value("접근할 수 없습니다."));
     }
     
     @DisplayName("글을 1개 조회한다.")

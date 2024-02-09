@@ -8,6 +8,16 @@ include::{snippets}/post-create/request-fields.adoc[]
 ==== HTTP Response
 include::{snippets}/post-create/http-response.adoc[]
 
+[[post-image-upload]]
+=== 글 이미지 등록
+
+==== HTTP Request
+include::{snippets}/post-image-upload/http-request.adoc[]
+include::{snippets}/post-image-upload/request-parts.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-image-upload/http-response.adoc[]
+
 [[post-inquiry]]
 === 글 단건 조회
 

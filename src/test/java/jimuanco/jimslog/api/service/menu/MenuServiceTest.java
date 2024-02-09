@@ -1,6 +1,7 @@
 package jimuanco.jimslog.api.service.menu;
 
 import jakarta.persistence.EntityManager;
+import jimuanco.jimslog.IntegrationTestSupport;
 import jimuanco.jimslog.api.service.menu.request.MenuServiceRequest;
 import jimuanco.jimslog.api.service.post.response.MenuResponse;
 import jimuanco.jimslog.domain.menu.Menu;
@@ -8,7 +9,6 @@ import jimuanco.jimslog.domain.menu.MenuRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -18,8 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 @Transactional
-@SpringBootTest
-class MenuServiceTest {
+class MenuServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private EntityManager em;

@@ -4,11 +4,13 @@ import jimuanco.jimslog.api.controller.post.PostController;
 import jimuanco.jimslog.api.controller.post.request.PostCreateRequest;
 import jimuanco.jimslog.api.controller.post.request.PostEditRequest;
 import jimuanco.jimslog.api.service.post.PostService;
+import jimuanco.jimslog.api.service.post.S3Uploader;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
 import jimuanco.jimslog.docs.RestDocsSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -17,11 +19,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.*;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
@@ -34,10 +36,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PostControllerDocsTest extends RestDocsSupport {
 
     private final PostService postService = mock(PostService.class);
+    private final S3Uploader s3Uploader = mock(S3Uploader.class);
 
     @Override
     protected Object initController() {
-        return new PostController(postService);
+        return new PostController(postService, s3Uploader);
     }
 
     @DisplayName("새로운 글을 등록하는 API")
@@ -46,12 +49,15 @@ class PostControllerDocsTest extends RestDocsSupport {
         PostCreateRequest request = PostCreateRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .menuId(1)
+                .uploadImageUrls(List.of("URL1", "URL2"))
+                .deleteImageUrls(List.of("URL3", "URL4"))
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
         mockMvc.perform(post("/posts")
-                .content(json)
-                .contentType(APPLICATION_JSON))
+                        .content(json)
+                        .contentType(APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andDo(document("post-create",
@@ -62,7 +68,41 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("content").type(JsonFieldType.STRING)
                                         .description("글 내용"),
                                 fieldWithPath("menuId").type(JsonFieldType.NUMBER)
-                                        .description("메뉴 ID")
+                                        .description("메뉴 ID"),
+                                fieldWithPath("uploadImageUrls").type(JsonFieldType.ARRAY)
+                                        .description("최종적으로 등록할 Image URL"),
+                                fieldWithPath("deleteImageUrls").type(JsonFieldType.ARRAY)
+                                        .description("최종적으로 등록하지 않을 Image URL")
+                        )
+                ));
+    }
+
+    @DisplayName("글에 이미지를 등록하는 API")
+    @Test
+    void uploadPostImage() throws Exception {
+        // given
+        MockMultipartFile image = new MockMultipartFile("postImage",
+                "image.png",
+                "image/png",
+                "<<image.png>>".getBytes());
+
+        given(s3Uploader.upload(any(MockMultipartFile.class), anyString()))
+                .willReturn("S3 Image URL");
+
+        // when // then
+        mockMvc.perform(multipart("/posts/image")
+                        .file(image)
+                        .contentType(MULTIPART_FORM_DATA))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andDo(document("post-image-upload",
+                        preprocessRequest(prettyPrint()),
+                        requestParts(
+                                partWithName("postImage").description("이미지 파일")
+                        ),
+                        responseFields(
+                                fieldWithPath("data").type(JsonFieldType.STRING)
+                                        .description("S3 Image URL")
                         )
                 ));
     }
@@ -165,6 +205,8 @@ class PostControllerDocsTest extends RestDocsSupport {
                 .title("글제목을 수정했습니다.")
                 .content("글내용을 수정했습니다.")
                 .menuId(2)
+                .uploadImageUrls(List.of("URL1", "URL2"))
+                .deleteImageUrls(List.of("URL3", "URL4"))
                 .build();
         String json = objectMapper.writeValueAsString(request);
 
@@ -184,7 +226,11 @@ class PostControllerDocsTest extends RestDocsSupport {
                                 fieldWithPath("content").type(JsonFieldType.STRING)
                                         .description("글 내용"),
                                 fieldWithPath("menuId").type(JsonFieldType.NUMBER)
-                                        .description("수정할 메뉴 ID")
+                                        .description("수정할 메뉴 ID"),
+                                fieldWithPath("uploadImageUrls").type(JsonFieldType.ARRAY)
+                                        .description("최종적으로 등록할 Image URL"),
+                                fieldWithPath("deleteImageUrls").type(JsonFieldType.ARRAY)
+                                        .description("최종적으로 등록하지 않을 Image URL")
                         )
                 ));
     }

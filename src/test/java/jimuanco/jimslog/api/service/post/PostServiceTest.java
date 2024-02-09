@@ -1,6 +1,10 @@
 package jimuanco.jimslog.api.service.post;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import io.findify.s3mock.S3Mock;
 import jakarta.persistence.EntityManager;
+import jimuanco.jimslog.IntegrationTestSupport;
 import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
@@ -8,23 +12,27 @@ import jimuanco.jimslog.api.service.post.response.PostResponse;
 import jimuanco.jimslog.domain.menu.Menu;
 import jimuanco.jimslog.domain.menu.MenuRepository;
 import jimuanco.jimslog.domain.post.Post;
+import jimuanco.jimslog.domain.post.PostImage;
+import jimuanco.jimslog.domain.post.PostImageRepository;
 import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
 @Transactional
-@SpringBootTest
-class PostServiceTest {
+class PostServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private EntityManager em;
@@ -38,6 +46,29 @@ class PostServiceTest {
     @Autowired
     private MenuRepository menuRepository;
 
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    @Value("${jimslog.s3.url}")
+    private String s3Url;
+
+    @Value("${jimslog.s3.local}")
+    private String localS3;
+
+    @Autowired
+    private AmazonS3 amazonS3;
+
+    @Autowired
+    private S3Uploader s3Uploader;
+
+    @Autowired
+    private PostImageRepository postImageRepository;
+
+    @AfterAll
+    static void tearDown(@Autowired S3Mock s3Mock) {
+        s3Mock.stop();
+    }
+
     @DisplayName("새로운 글을 등록할때 munuId를 넣지 않으면 메뉴가 지정되지 않는다.")
     @Test
     void createPostWithoutMenuId() {
@@ -45,6 +76,8 @@ class PostServiceTest {
         PostCreateServiceRequest request = PostCreateServiceRequest.builder()
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -81,6 +114,8 @@ class PostServiceTest {
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
                 .menuId(Math.toIntExact(mainMenu1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -110,6 +145,79 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.createPost(request))
                 .isInstanceOf(MenuNotFound.class)
                 .hasMessage("존재하지 않는 메뉴입니다.");
+    }
+
+    @DisplayName("새로운 글을 등록할때 S3와 DB에는 최종 등록하는 글의 이미지들만 남아있다.")
+    @Test
+    void createPostWithImages() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        MockMultipartFile image2 = new MockMultipartFile("postImage",
+                "image2.png",
+                "image/png",
+                "<<image2.png>>".getBytes());
+
+        MockMultipartFile image3 = new MockMultipartFile("postImage",
+                "image3.png",
+                "image/png",
+                "<<image3.png>>".getBytes());
+
+        MockMultipartFile image4 = new MockMultipartFile("postImage",
+                "image4.png",
+                "image/png",
+                "<<image4.png>>".getBytes());
+
+        MockMultipartFile image5 = new MockMultipartFile("postImage",
+                "image5.png",
+                "image/png",
+                "<<image5.png>>".getBytes());
+
+        String uploadImageUrl1 = s3Uploader.upload(image1, "images").replace(localS3, s3Url);
+        String uploadImageUrl2 = s3Uploader.upload(image2, "images").replace(localS3, s3Url);
+        String uploadImageUrl3 = s3Uploader.upload(image3, "images").replace(localS3, s3Url);
+        String uploadImageUrl4 = s3Uploader.upload(image4, "images").replace(localS3, s3Url);
+        String uploadImageUrl5 = s3Uploader.upload(image5, "images").replace(localS3, s3Url);
+
+        PostCreateServiceRequest request = PostCreateServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .uploadImageUrls(List.of(uploadImageUrl1, uploadImageUrl3, uploadImageUrl5))
+                .deleteImageUrls(List.of(uploadImageUrl2, uploadImageUrl4))
+                .build();
+
+        // when
+        postService.createPost(request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+        Post post = postRepository.findAll().get(0);
+
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+        String fileName2 = uploadImageUrl2.substring(s3Url.length() + 1);
+        String fileName3 = uploadImageUrl3.substring(s3Url.length() + 1);
+        String fileName4 = uploadImageUrl4.substring(s3Url.length() + 1);
+        String fileName5 = uploadImageUrl5.substring(s3Url.length() + 1);
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(amazonS3.getObject(bucket, fileName3).getKey()).isEqualTo(fileName3);
+        assertThat(amazonS3.getObject(bucket, fileName5).getKey()).isEqualTo(fileName5);
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName2))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName4))
+                .isInstanceOf(AmazonS3Exception.class);
+
+        assertThat(postImages).hasSize(3)
+                .extracting("postId", "fileName")
+                .contains(
+                        tuple(post.getId(), fileName1),
+                        tuple(post.getId(), fileName3),
+                        tuple(post.getId(), fileName5)
+                );
     }
 
     @DisplayName("글 1개 조회한다.")
@@ -293,6 +401,8 @@ class PostServiceTest {
                 .title("글제목 수정")
                 .content("글내용")
                 .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -341,6 +451,8 @@ class PostServiceTest {
                 .title("글제목")
                 .content("글내용 수정")
                 .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -395,6 +507,8 @@ class PostServiceTest {
                 .title("글제목")
                 .content("글내용")
                 .menuId(Math.toIntExact(subMenu1_2.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(new ArrayList<>())
                 .build();
 
         // when
@@ -509,6 +623,102 @@ class PostServiceTest {
         assertThat((long) editedPost.getMenu().getId()).isEqualTo(subMenu1_1.getId());
     }
 
+    @DisplayName("글을 수정할때 S3와 DB에는 최종 등록하는 글의 이미지들만 남아있다.")
+    @Test
+    void editPostWithImages() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        MockMultipartFile image2 = new MockMultipartFile("postImage",
+                "image2.png",
+                "image/png",
+                "<<image2.png>>".getBytes());
+
+        MockMultipartFile image3 = new MockMultipartFile("postImage",
+                "image3.png",
+                "image/png",
+                "<<image3.png>>".getBytes());
+
+        String uploadImageUrl1 = s3Uploader.upload(image1, "images").replace(localS3, s3Url);
+        String uploadImageUrl2 = s3Uploader.upload(image2, "images").replace(localS3, s3Url);
+        String uploadImageUrl3 = s3Uploader.upload(image3, "images").replace(localS3, s3Url);
+
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        MockMultipartFile image4 = new MockMultipartFile("postImage",
+                "image4.png",
+                "image/png",
+                "<<image4.png>>".getBytes());
+
+        MockMultipartFile image5 = new MockMultipartFile("postImage",
+                "image5.png",
+                "image/png",
+                "<<image5.png>>".getBytes());
+
+        String uploadImageUrl4 = s3Uploader.upload(image4, "images").replace(localS3, s3Url);
+        String uploadImageUrl5 = s3Uploader.upload(image5, "images").replace(localS3, s3Url);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(List.of(uploadImageUrl5))
+                .deleteImageUrls(List.of(uploadImageUrl2, uploadImageUrl4))
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+        Post EditedPost = postRepository.findAll().get(0);
+
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+        String fileName2 = uploadImageUrl2.substring(s3Url.length() + 1);
+        String fileName3 = uploadImageUrl3.substring(s3Url.length() + 1);
+        String fileName4 = uploadImageUrl4.substring(s3Url.length() + 1);
+        String fileName5 = uploadImageUrl5.substring(s3Url.length() + 1);
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(amazonS3.getObject(bucket, fileName3).getKey()).isEqualTo(fileName3);
+        assertThat(amazonS3.getObject(bucket, fileName5).getKey()).isEqualTo(fileName5);
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName2))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName4))
+                .isInstanceOf(AmazonS3Exception.class);
+
+        assertThat(postImages).hasSize(3)
+                .extracting("postId", "fileName")
+                .contains(
+                        tuple(null, fileName1),
+                        tuple(null, fileName3),
+                        tuple(EditedPost.getId(), fileName5)
+                );
+    }
+
     @DisplayName("글을 삭제한다.")
     @Test
     void deletePost() {
@@ -524,5 +734,61 @@ class PostServiceTest {
 
         // then
         assertThat(postRepository.count()).isEqualTo(0);
+    }
+
+    @DisplayName("글을 삭제할때 글에 포함된 이미지는 S3와 DB에서 삭제된다.")
+    @Test
+    void deletePostWithImages() throws IOException {
+        // given
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        MockMultipartFile image2 = new MockMultipartFile("postImage",
+                "image2.png",
+                "image/png",
+                "<<image2.png>>".getBytes());
+
+        String uploadImageUrl1 = s3Uploader.upload(image1, "images").replace(localS3, s3Url);
+        String uploadImageUrl2 = s3Uploader.upload(image2, "images").replace(localS3, s3Url);
+
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        postImageRepository.findAll().stream()
+                .forEach(postImage -> postImage.updatePostId(post.getId()));
+
+        // when
+        postService.deletePost(post.getId());
+
+        // then
+        assertThat(postImageRepository.findAll()).hasSize(0);
+
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+        String fileName2 = uploadImageUrl2.substring(s3Url.length() + 1);
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName1))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName2))
+                .isInstanceOf(AmazonS3Exception.class);
     }
 }
