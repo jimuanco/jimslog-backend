@@ -86,6 +86,10 @@ public class PostService {
                 .orElseThrow(MenuNotFound::new);
 
         post.edit(serviceRequest.getTitle(), serviceRequest.getContent(), menu); // todo editor class 만들지 고민
+
+        processImageUploadsForPost(serviceRequest.getUploadImageUrls(), post);
+        deleteS3Images(serviceRequest.getDeleteImageUrls());
+        deleteDbImages(serviceRequest.getDeleteImageUrls());
     }
 
     @Transactional
