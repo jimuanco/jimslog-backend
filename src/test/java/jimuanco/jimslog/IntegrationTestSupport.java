@@ -6,6 +6,6 @@ import org.springframework.test.context.ActiveProfiles;
 
 @Import(AwsS3MockConfig.class)
 @ActiveProfiles("test")
-@SpringBootTest
+@SpringBootTest(properties = "schedules.post-images.limit-time = 0")
 public class IntegrationTestSupport {
 }
