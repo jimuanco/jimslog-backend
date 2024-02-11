@@ -16,6 +16,8 @@ import jimuanco.jimslog.domain.post.PostImageRepository;
 import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +68,16 @@ class PostServiceTest extends IntegrationTestSupport {
 //    static void tearDown(@Autowired S3Mock s3Mock) {
 //        s3Mock.stop();
 //    }
+
+    @BeforeEach
+    public void setUp() {
+        amazonS3.createBucket(bucket);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        amazonS3.deleteBucket(bucket);
+    }
 
     @DisplayName("새로운 글을 등록할때 munuId를 넣지 않으면 메뉴가 지정되지 않는다.")
     @Test
@@ -441,7 +453,7 @@ class PostServiceTest extends IntegrationTestSupport {
                 .title("글제목 입니다.")
                 .content("글내용 입니다.")
                 .uploadImageUrls(new ArrayList<>())
-                .deleteImageUrls(List.of(s3Url + "/" + dirName + "/a"))
+                .deleteImageUrls(List.of(uploadImageUrl1 + "a"))
                 .build();
 
         // when
@@ -1344,7 +1356,7 @@ class PostServiceTest extends IntegrationTestSupport {
                 .content("글내용 입니다.")
                 .menuId(Math.toIntExact(subMenu1_1.getId()))
                 .uploadImageUrls(new ArrayList<>())
-                .deleteImageUrls(List.of(s3Url + "/" + dirName + "/a"))
+                .deleteImageUrls(List.of(uploadImageUrl1 + "a"))
                 .build();
 
         // when
