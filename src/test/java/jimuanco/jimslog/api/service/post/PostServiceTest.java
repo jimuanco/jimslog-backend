@@ -954,6 +954,410 @@ class PostServiceTest extends IntegrationTestSupport {
                 );
     }
 
+    @DisplayName("글을 수정할때 uploadImageUrl이 정확하면 Post Image에 PostId를 업데이트 한다.")
+    @Test
+    void editPostWithExactUploadImageUrl() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url +  "/" + dirName + "/image1)")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(List.of(s3Url + "/" + dirName + "/image1"))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isEqualTo(post.getId());
+    }
+
+    @DisplayName("글을 수정할때 " +
+            "uploadImageUrl에서 S3 Url과 Directory Name이 정확하지 않으면 Post Image에 PostId를 업데이트하지 않는다.")
+    @Test
+    void editPostWithInexactUploadImageUrl() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url +  "a/" + dirName + "/image1)")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(List.of(s3Url + "a/" + dirName + "/image1"))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isNull();
+    }
+
+    @DisplayName("글을 수정할때 " +
+            "uploadImageUrl에서 S3 Url만 입력하면 Post Image에 PostId를 업데이트하지 않는다.")
+    @Test
+    void editPostWithOnlyS3UrlInUploadImageUrl() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url + ")")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(List.of(s3Url))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isNull();
+    }
+
+    @DisplayName("글을 수정할때 " +
+            "uploadImageUrl에서 Image 파일 이름이 정확하지 않으면 Post Image에 PostId를 업데이트하지 않는다.")
+    @Test
+    void editPostWithInexactUploadImageName() {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        String dirName = "images";
+
+        PostImage image1 = PostImage.builder()
+                .fileName(dirName + "/image1")
+                .build();
+        postImageRepository.save(image1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다. ![image](" + s3Url +  "/" + dirName + "/image2)")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(List.of(s3Url + "/" + dirName + "/image2"))
+                .deleteImageUrls(new ArrayList<>())
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        PostImage postImage = postImageRepository.findAll().get(0);
+
+        assertThat(postImage.getPostId()).isNull();
+    }
+
+    @DisplayName("글을 수정할때 deleteImageUrl이 정확하면 Post Image를 S3와 Db에서 삭제한다.")
+    @Test
+    void editPostWithExactDeleteImageUrl() throws IOException {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of(uploadImageUrl1))
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThatThrownBy(() -> amazonS3.getObject(bucket, fileName1))
+                .isInstanceOf(AmazonS3Exception.class);
+        assertThat(postImages).hasSize(0);
+    }
+
+    @DisplayName("글을 수정할때 " +
+            "deleteImageUrl에서 S3 Url과 Directory Name이 정확하지 않으면 Post Image를 S3와 Db에서 삭제하지 않는다.")
+    @Test
+    void editPostWithInexactDeleteImageUrl() throws IOException {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of("a" + uploadImageUrl1))
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(postImages).hasSize(1);
+    }
+
+    @DisplayName("글을 수정할때 " +
+            "deleteImageUrl에서 S3 Url만 입력하면 Post Image를 S3와 Db에서 삭제하지 않는다.")
+    @Test
+    void editPostWithOnlyS3UrlInDeleteImageUrl() throws IOException {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of(s3Url))
+                .build();
+
+        // when
+        postService.editPost(post.getId(), request);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(postImages).hasSize(1);
+    }
+
+    @DisplayName("글을 수정할때 " +
+            "deleteImageUrl에서 Image 파일 이름이 정확하지 않으면 Post Image를 S3와 Db에서 삭제하지 않는다.")
+    @Test
+    void editPostWithInexactDeleteImageName() throws IOException {
+        // given
+        Menu subMenu1_1 = Menu.builder()
+                .name("1-1. 메뉴")
+                .listOrder(1)
+                .children(new ArrayList<>())
+                .build();
+
+        Menu mainMenu1 = Menu.builder()
+                .name("1. 메뉴")
+                .listOrder(1)
+                .children(List.of(subMenu1_1))
+                .build();
+        menuRepository.save(mainMenu1);
+
+        Post post = Post.builder()
+                .title("글제목")
+                .content("글내용")
+                .menu(subMenu1_1)
+                .build();
+        postRepository.save(post);
+
+        MockMultipartFile image1 = new MockMultipartFile("postImage",
+                "image1.png",
+                "image/png",
+                "<<image1.png>>".getBytes());
+
+        String dirName = "images";
+        String uploadImageUrl1 = s3Uploader.upload(image1, dirName).replace(localS3, s3Url);
+        String fileName1 = uploadImageUrl1.substring(s3Url.length() + 1);
+
+        PostEditServiceRequest request = PostEditServiceRequest.builder()
+                .title("글제목 입니다.")
+                .content("글내용 입니다.")
+                .menuId(Math.toIntExact(subMenu1_1.getId()))
+                .uploadImageUrls(new ArrayList<>())
+                .deleteImageUrls(List.of(s3Url + "/" + dirName + "/a"))
+                .build();
+
+        // when
+        assertThatThrownBy(() -> postService.editPost(post.getId(), request))
+                .isInstanceOf(AmazonS3Exception.class);
+
+        // then
+        List<PostImage> postImages = postImageRepository.findAll();
+
+        assertThat(amazonS3.getObject(bucket, fileName1).getKey()).isEqualTo(fileName1);
+        assertThat(postImages).hasSize(1);
+    }
+
     @DisplayName("글을 삭제한다.")
     @Test
     void deletePost() {
