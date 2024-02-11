@@ -1,6 +1,6 @@
 package jimuanco.jimslog.config;
 
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
 import jimuanco.jimslog.domain.post.PostImage;
 import jimuanco.jimslog.domain.post.PostImageRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +24,13 @@ public class Scheduler {
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
-    private final PostImageRepository postImageRepository;
-    private final AmazonS3Client amazonS3Client;
+    @Value("${schedules.post-images.limit-time}")
+    private int limitTime;
 
-    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
+    private final PostImageRepository postImageRepository;
+    private final AmazonS3 amazonS3;
+
+    @Scheduled(cron = "${schedules.cron.post-images.delete}", zone = "Asia/Seoul")
     public void deleteUnNecessaryImage() {
         log.info("불필요한 이미지 삭제 스케줄러 작동 시작");
 
@@ -35,8 +38,8 @@ public class Scheduler {
 
         List<PostImage> deletePostImages = postImages.stream()
                 .filter(postImage ->
-                        Duration.between(postImage.getCreatedDateTime(), LocalDateTime.now()).toHours() >= 24)
-                .peek(postImage -> amazonS3Client.deleteObject(bucket, postImage.getFileName()))
+                        Duration.between(postImage.getCreatedDateTime(), LocalDateTime.now()).toSeconds() >= limitTime)
+                .peek(postImage -> amazonS3.deleteObject(bucket, postImage.getFileName()))
                 .collect(Collectors.toList());
 
         postImageRepository.deleteAllInBatch(deletePostImages);
