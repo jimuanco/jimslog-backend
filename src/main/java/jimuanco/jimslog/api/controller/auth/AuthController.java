@@ -46,7 +46,7 @@ public class AuthController {
         String refreshToken = cookie.getValue();
 
         LocalDateTime now = now();
-        LocalDateTime minimumExpiration = now.plusDays(7);
+        Long minimumExpiration = 60 * 60 * 24 * 7L;
         LocalDateTime expiryDate = now.plusDays(30);
 
         return DataResponse.of(authService.refresh(refreshToken, response, minimumExpiration, expiryDate));

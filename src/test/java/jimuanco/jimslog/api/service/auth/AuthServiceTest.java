@@ -11,15 +11,20 @@ import jimuanco.jimslog.exception.InvalidLoginInformation;
 import jimuanco.jimslog.exception.InvalidRefreshToken;
 import jimuanco.jimslog.exception.UserNotFound;
 import jimuanco.jimslog.utils.JwtUtils;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,9 +45,17 @@ class AuthServiceTest extends IntegrationTestSupport {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
     private EntityManager em;
 
     String testSecretKey = "81b87ceccbd1c0d324168169b2292ab4b53bcd66b54f5e562d0fa4005ebd942f";
+
+    @AfterEach
+    public void tearDown() {
+        refreshTokenRepository.deleteAll();
+    }
     
     @DisplayName("회원가입을 할때 비밀번호는 암호화된다.")
     @Test
@@ -81,6 +94,7 @@ class AuthServiceTest extends IntegrationTestSupport {
                 passwordEncoder,
                 new JwtUtils(testSecretKey),
                 refreshTokenRepository,
+                redisTemplate,
                 testAdminEmail
         );
 
@@ -145,7 +159,7 @@ class AuthServiceTest extends IntegrationTestSupport {
         assertThat(response.getCookie("refreshToken").getMaxAge()).isNotNull();
     }
 
-    @DisplayName("로그인할 때마다 새로운 Refresh Token을 DB에 저장하고 반환한다")
+    @DisplayName("로그인할 때마다 새로운 Refresh Token을 Redis에 저장하고 반환한다")
     @Test
     void loginTwice() {
         // given
@@ -167,17 +181,12 @@ class AuthServiceTest extends IntegrationTestSupport {
         // when
         authService.login(serviceRequest, response, expiryDate);
         RefreshToken refreshToken1 = refreshTokenRepository.findByUserEmail("jim@gmail.com").get();
-//        String token1 = refreshToken1.getRefreshToken();
-
-        em.flush();
-        em.clear();
 
         authService.login(serviceRequest, response, LocalDateTime.now().plusDays(30));
-        RefreshToken refreshToken2 = refreshTokenRepository.findByUserEmail("jim@gmail.com").get();
-//        String token2 = refreshToken2.getRefreshToken();
+        RefreshToken refreshToken = refreshTokenRepository.findByUserEmail("jim@gmail.com").get();
 
         // then
-        assertThat(refreshToken1.getRefreshToken()).isNotEqualTo(refreshToken2.getRefreshToken());
+        assertThat(refreshToken1.getRefreshToken()).isNotEqualTo(refreshToken.getRefreshToken());
     }
 
     @DisplayName("로그인할때 이메일이 맞지 않으면 예외가 발생한다.")
@@ -250,7 +259,7 @@ class AuthServiceTest extends IntegrationTestSupport {
         authService.login(serviceRequest, response, LocalDateTime.now().plusDays(30));
 
         String refreshToken = response.getCookie("refreshToken").getValue().toString();
-        LocalDateTime minimumExpiration = LocalDateTime.now().plusDays(7);
+        Long minimumExpiration = 60 * 60 * 24 * 7L;
         LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
 
         // when
@@ -282,7 +291,7 @@ class AuthServiceTest extends IntegrationTestSupport {
         authService.login(serviceRequest, response, expiryDate);
 
         String WrongRefreshToken = response.getCookie("refreshToken").getValue().toString() + "a";
-        LocalDateTime minimumExpiration = LocalDateTime.now().plusDays(7);
+        Long minimumExpiration = 60 * 60 * 24 * 7L;
 
         // when // then
         assertThatThrownBy(() -> authService.refresh(WrongRefreshToken, response, minimumExpiration, expiryDate))
@@ -295,34 +304,29 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void refreshWithExpiredRefreshToken() {
         // given
-        User user = User.builder()
-                .name("이름")
-                .email("jim@gmail.com")
-                .password(passwordEncoder.encode("1234"))
+        String expiredRefreshToken = UUID.randomUUID().toString();
+        RefreshToken refreshTokenOb = RefreshToken.builder()
+                .refreshToken(expiredRefreshToken)
+                .userEmail("jim@gmail.com")
+                .expiration(1)
                 .build();
-        userRepository.save(user);
+        refreshTokenRepository.save(refreshTokenOb);
 
-        LoginServiceRequest serviceRequest = LoginServiceRequest.builder()
-                .email("jim@gmail.com")
-                .password("1234")
-                .build();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        LocalDateTime expiryDate = LocalDateTime.now().minusDays(1);
-
-        authService.login(serviceRequest, response, expiryDate);
-
-        String expiredRefreshToken = response.getCookie("refreshToken").getValue().toString();
-        LocalDateTime minimumExpiration = LocalDateTime.now().plusDays(7);
+        Long minimumExpiration = 60 * 60 * 24 * 7L;
+        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
 
         // when // then
+        assertThatThrownBy(() ->
+                Awaitility.await()
+                        .atMost(2, TimeUnit.SECONDS)
+                        .until(() -> !refreshTokenRepository.findById(expiredRefreshToken).get().getRefreshToken().equals(expiredRefreshToken)))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("No value present");
+
         assertThatThrownBy(() -> authService.refresh(expiredRefreshToken, response, minimumExpiration, expiryDate))
                 .isInstanceOf(InvalidRefreshToken.class)
                 .hasMessage("Refresh Token이 유효하지 않습니다.");
-
-        assertThatThrownBy(() -> refreshTokenRepository.findByRefreshToken(expiredRefreshToken)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 Refresh Token입니다.")))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("존재하지 않는 Refresh Token입니다.");
 
     }
 
@@ -347,7 +351,7 @@ class AuthServiceTest extends IntegrationTestSupport {
         authService.login(serviceRequest, response, expiryDate);
 
         String refreshToken = response.getCookie("refreshToken").getValue().toString();
-        LocalDateTime minimumExpiration = LocalDateTime.now().plusDays(7);
+        Long minimumExpiration = 60 * 60 * 24 * 7L;
 
         userRepository.delete(user);
 
@@ -375,12 +379,12 @@ class AuthServiceTest extends IntegrationTestSupport {
                 .password("1234")
                 .build();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        LocalDateTime expiryDate = LocalDateTime.now().plusDays(7);
+        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
 
         authService.login(serviceRequest, response, expiryDate);
 
         String refreshToken = response.getCookie("refreshToken").getValue().toString();
-        LocalDateTime minimumExpiration = LocalDateTime.now().plusDays(7);
+        Long minimumExpiration = 60 * 60 * 24 * 30L;
 
         // when
         TokenResponse tokenResponse = authService.refresh(refreshToken, response, minimumExpiration, expiryDate);
@@ -395,13 +399,10 @@ class AuthServiceTest extends IntegrationTestSupport {
     @Test
     void logout() {
         // given
-        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
         String refreshToken = UUID.randomUUID().toString();
-
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .userEmail("jim@gmail.com")
                 .refreshToken(refreshToken)
-                .expiryDate(expiryDate)
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 
@@ -412,20 +413,17 @@ class AuthServiceTest extends IntegrationTestSupport {
 
         // then
         assertThat(response.getCookie("refreshToken").getMaxAge()).isZero();
-        assertThat(refreshTokenRepository.findByRefreshToken(refreshToken).isEmpty()).isTrue();
+        assertThat(refreshTokenRepository.findById(refreshToken).isEmpty()).isTrue();
     }
 
     @DisplayName("로그아웃시 잘못된 Refresh Token으로 요청하면 예외가 발생한다.")
     @Test
     void logoutWithWrongRefreshToken() {
         // given
-        LocalDateTime expiryDate = LocalDateTime.now().plusDays(30);
         String refreshToken = UUID.randomUUID().toString();
-
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .userEmail("jim@gmail.com")
                 .refreshToken(refreshToken)
-                .expiryDate(expiryDate)
                 .build();
         refreshTokenRepository.save(refreshTokenEntity);
 

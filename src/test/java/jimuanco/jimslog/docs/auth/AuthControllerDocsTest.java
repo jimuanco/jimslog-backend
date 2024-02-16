@@ -154,7 +154,7 @@ public class AuthControllerDocsTest extends RestDocsSupport {
         given(authService.refresh(
                 eq(refreshToken),
                 any(HttpServletResponse.class),
-                any(LocalDateTime.class),
+                any(Long.TYPE),
                 any(LocalDateTime.class))
         ).willReturn(tokenResponse);
 
