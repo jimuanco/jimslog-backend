@@ -11,6 +11,7 @@ import jimuanco.jimslog.exception.InvalidRefreshToken;
 import jimuanco.jimslog.exception.UserNotFound;
 import jimuanco.jimslog.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static java.time.LocalDateTime.now;
 
@@ -31,6 +32,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     private final String ADMIN_ID;
 
@@ -38,11 +40,13 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtUtils jwtUtils,
                        RefreshTokenRepository refreshTokenRepository,
+                       RedisTemplate<String, String> redisTemplate,
                        @Value("${jimslog.admin}") String adminId) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.redisTemplate = redisTemplate;
         this.ADMIN_ID = adminId;
     }
 
@@ -68,21 +72,16 @@ public class AuthService {
         User user = authenticateEmailAndPassword(serviceRequest);
 
         String accessToken = jwtUtils.generateAccessToken(user);
-        Optional<RefreshToken> foundToken = refreshTokenRepository.findByUserEmail(user.getEmail());
+
+        refreshTokenRepository.findByUserEmail(user.getEmail())
+                .ifPresent(token -> refreshTokenRepository.delete(token));
 
         String newRefreshToken = UUID.randomUUID().toString();
-
-        foundToken.ifPresentOrElse(
-                token -> token.updateToken(newRefreshToken, expiryDate),
-                () -> {
-                    RefreshToken refreshToken = RefreshToken.builder()
-                            .userEmail(user.getEmail())
-                            .refreshToken(newRefreshToken)
-                            .expiryDate(expiryDate)
-                            .build();
-                    refreshTokenRepository.save(refreshToken);
-                }
-        );
+        RefreshToken refreshToken = RefreshToken.builder()
+                .refreshToken(newRefreshToken)
+                .userEmail(user.getEmail())
+                .build();
+        refreshTokenRepository.save(refreshToken);
 
         addRefreshTokenInCookie(response, newRefreshToken, Duration.between(now(), expiryDate));
 
@@ -94,27 +93,30 @@ public class AuthService {
 
     public TokenResponse refresh(String refreshToken,
                                  HttpServletResponse response,
-                                 LocalDateTime minimumExpiration,
+                                 Long minimumExpiration,
                                  LocalDateTime expiryDate) {
-        // todo Redis 도입
-        RefreshToken foundToken = refreshTokenRepository.findByRefreshToken(refreshToken)
-                .filter(token -> {
-                    if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
-                        refreshTokenRepository.delete(token);
-                        return false;
-                    }
-                    return true;
-                })
-                .orElseThrow(InvalidRefreshToken::new);
+        Long secondsToLive = redisTemplate.getExpire("refreshToken:" + refreshToken, TimeUnit.SECONDS);
+        if (secondsToLive < 0) {
+            throw new InvalidRefreshToken();
+        }
 
+        RefreshToken foundToken = refreshTokenRepository.findById(refreshToken)
+                .orElseThrow(InvalidRefreshToken::new);
         User user = userRepository.findByEmail(foundToken.getUserEmail())
                 .orElseThrow(UserNotFound::new);
 
         String accessToken = jwtUtils.generateAccessToken(user);
 
-        if (foundToken.getExpiryDate().isBefore(minimumExpiration)) {
+        if (secondsToLive < minimumExpiration) {
+            refreshTokenRepository.delete(foundToken);
+
             String newRefreshToken = UUID.randomUUID().toString();
-            foundToken.updateToken(newRefreshToken, expiryDate);
+            RefreshToken refreshTokenToRedis = RefreshToken.builder()
+                    .refreshToken(newRefreshToken)
+                    .userEmail(user.getEmail())
+                    .build();
+            refreshTokenRepository.save(refreshTokenToRedis);
+
             addRefreshTokenInCookie(response, newRefreshToken, Duration.between(now(), expiryDate));
         }
 
@@ -126,7 +128,7 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshToken, HttpServletResponse response) {
-        RefreshToken foundToken = refreshTokenRepository.findByRefreshToken(refreshToken)
+        RefreshToken foundToken = refreshTokenRepository.findById(refreshToken)
                 .orElseThrow(InvalidRefreshToken::new);
         refreshTokenRepository.delete(foundToken);
 

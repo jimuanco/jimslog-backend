@@ -1,40 +1,33 @@
 package jimuanco.jimslog.domain.user;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jimuanco.jimslog.domain.BaseEntity;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-
-import static jakarta.persistence.GenerationType.IDENTITY;
-import static lombok.AccessLevel.PROTECTED;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.data.redis.core.index.Indexed;
 
 @Getter
-@NoArgsConstructor(access = PROTECTED)
-@Entity
-public class RefreshToken extends BaseEntity {
+@RedisHash(value = "refreshToken", timeToLive = 60 * 60 * 24 * 30)
+public class RefreshToken {
 
     @Id
-    @GeneratedValue(strategy = IDENTITY)
-    private Long id;
     private String refreshToken;
+
+    @Indexed
     private String userEmail;
 
-    private LocalDateTime expiryDate;
+    @TimeToLive
+    Integer expiration;
 
     @Builder
-    private RefreshToken(String refreshToken, String userEmail, LocalDateTime expiryDate) {
+    private RefreshToken(String refreshToken, String userEmail, Integer expiration) {
         this.refreshToken = refreshToken;
         this.userEmail = userEmail;
-        this.expiryDate = expiryDate;
+        this.expiration = expiration;
     }
 
-    public void updateToken(String newToken, LocalDateTime expiryDate) {
+    public void updateToken(String newToken) {
         this.refreshToken = newToken;
-        this.expiryDate = expiryDate;
     }
 }
