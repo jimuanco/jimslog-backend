@@ -30,7 +30,29 @@ spring:
   data:
     redis:
       port: 6379
-      host: localhost
+      host: ${REDIS_HOST}
+
+cloud:
+  aws:
+    s3:
+      bucket: ${S3_BUCKET}
+    region:
+      static: ${AWS_REGION_STATIC}
+    stack:
+      auto: false
+    credentials:
+      access-key: ${AWS_CREDENTIALS_ACCESS_KEY}
+      secret-key: ${AWS_CREDENTIALS_SECRET_KEY}
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
+
+jimslog:
+  admin: ${JIMSLOG_ADMIN}
+  s3:
+    url: ${JIMSLOG_S3_URL}
+    local: ${JIMSLOG_S3_LOCAL}
 
 schedules :
   cron :
@@ -38,21 +60,3 @@ schedules :
       delete : 0 0 4 * * *
   post-images :
     limit-time : 86400
-
----
-
-spring:
-  config:
-    activate:
-      on-profile: prod
-  data:
-    redis:
-      password: 1234
-
----
-spring:
-  profiles:
-    include:
-      - secret
-      - aws
-      - credentials
