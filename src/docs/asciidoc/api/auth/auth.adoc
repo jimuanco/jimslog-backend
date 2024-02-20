@@ -1,0 +1,43 @@
+[[auth-signup]]
+=== 회원가입
+
+==== HTTP Request
+include::{snippets}/auth-signup/http-request.adoc[]
+include::{snippets}/auth-signup/request-fields.adoc[]
+
+==== HTTP Response
+include::{snippets}/auth-signup/http-response.adoc[]
+
+[[auth-login]]
+=== 로그인
+
+==== HTTP Request
+include::{snippets}/auth-login/http-request.adoc[]
+include::{snippets}/auth-login/request-fields.adoc[]
+
+==== HTTP Response
+include::{snippets}/auth-login/http-response.adoc[]
+include::{snippets}/auth-login/response-cookies.adoc[]
+include::{snippets}/auth-login/response-fields.adoc[]
+
+[[auth-refresh]]
+=== Access Token 재발급
+
+==== HTTP Request
+include::{snippets}/auth-refresh/http-request.adoc[]
+include::{snippets}/auth-refresh/request-cookies.adoc[]
+
+==== HTTP Response
+include::{snippets}/auth-refresh/http-response.adoc[]
+include::{snippets}/auth-refresh/response-cookies.adoc[]
+include::{snippets}/auth-refresh/response-fields.adoc[]
+
+=== 로그아웃
+
+==== HTTP Request
+include::{snippets}/auth-logout/http-request.adoc[]
+include::{snippets}/auth-logout/request-cookies.adoc[]
+
+==== HTTP Response
+include::{snippets}/auth-logout/http-response.adoc[]
+include::{snippets}/auth-logout/response-cookies.adoc[]

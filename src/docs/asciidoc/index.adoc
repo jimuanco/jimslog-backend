@@ -1,0 +1,25 @@
+ifndef::snippets[]
+:snippets: ../../build/generated-snippets
+endif::[]
+= Jimslog REST API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+[[Post-API]]
+== Post API
+
+include::api/post/post.adoc[]
+
+[[Auth-API]]
+== Auth API
+
+include::api/auth/auth.adoc[]
+
+[[Menu-API]]
+== Menu API
+
+include::api/menu/menu.adoc[]

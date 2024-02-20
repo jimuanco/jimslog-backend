@@ -1,0 +1,62 @@
+[[post-create]]
+=== 신규 글 등록
+
+==== HTTP Request
+include::{snippets}/post-create/http-request.adoc[]
+include::{snippets}/post-create/request-fields.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-create/http-response.adoc[]
+
+[[post-image-upload]]
+=== 글 이미지 등록
+
+==== HTTP Request
+include::{snippets}/post-image-upload/http-request.adoc[]
+include::{snippets}/post-image-upload/request-parts.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-image-upload/http-response.adoc[]
+
+[[post-inquiry]]
+=== 글 단건 조회
+
+==== HTTP Request
+include::{snippets}/post-inquiry/http-request.adoc[]
+include::{snippets}/post-inquiry/path-parameters.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-inquiry/http-response.adoc[]
+include::{snippets}/post-inquiry/response-fields.adoc[]
+
+[[posts-list]]
+=== 글 여러개 조회
+
+==== HTTP Request
+include::{snippets}/posts-list/http-request.adoc[]
+include::{snippets}/posts-list/query-parameters.adoc[]
+
+==== HTTP Response
+include::{snippets}/posts-list/http-response.adoc[]
+include::{snippets}/posts-list/response-fields.adoc[]
+
+[[post-edit]]
+=== 글 수정
+
+==== HTTP Request
+include::{snippets}/post-edit/http-request.adoc[]
+include::{snippets}/post-edit/path-parameters.adoc[]
+include::{snippets}/post-edit/request-fields.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-edit/http-response.adoc[]
+
+[[post-delete]]
+=== 글 삭제
+
+==== HTTP Request
+include::{snippets}/post-delete/http-request.adoc[]
+include::{snippets}/post-delete/path-parameters.adoc[]
+
+==== HTTP Response
+include::{snippets}/post-delete/http-response.adoc[]

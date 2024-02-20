@@ -1,0 +1,19 @@
+[[menus-create]]
+=== 메뉴 생성
+
+==== HTTP Request
+include::{snippets}/menus-create/http-request.adoc[]
+include::{snippets}/menus-create/request-fields.adoc[]
+
+==== HTTP Response
+include::{snippets}/menus-create/http-response.adoc[]
+
+[[menus-list]]
+=== 메뉴 조회
+
+==== HTTP Request
+include::{snippets}/menus-list/http-request.adoc[]
+
+==== HTTP Response
+include::{snippets}/menus-list/http-response.adoc[]
+include::{snippets}/menus-list/response-fields.adoc[]

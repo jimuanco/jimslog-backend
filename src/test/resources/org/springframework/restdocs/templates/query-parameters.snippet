@@ -1,0 +1,14 @@
+==== Query Parameters
+|===
+|Parameter|Default|Optional|Description
+
+{{#parameters}}
+
+|{{#tableCellContent}}`+{{name}}+`{{/tableCellContent}}
+|{{#tableCellContent}}{{#default}} {{.}} {{/default}}{{/tableCellContent}}
+|{{#tableCellContent}}{{#optional}}True{{/optional}}{{/tableCellContent}}
+|{{#tableCellContent}}{{description}}{{/tableCellContent}}
+
+{{/parameters}}
+
+|===
