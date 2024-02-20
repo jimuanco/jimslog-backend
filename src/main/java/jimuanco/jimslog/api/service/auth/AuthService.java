@@ -50,6 +50,7 @@ public class AuthService {
         this.ADMIN_ID = adminId;
     }
 
+    @Transactional
     public void signup(SignupServiceRequest serviceRequest) {
         checkDuplicateEmail(serviceRequest.getEmail());
 
@@ -65,7 +66,6 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    @Transactional
     public TokenResponse login(LoginServiceRequest serviceRequest,
                                HttpServletResponse response,
                                LocalDateTime expiryDate) {
