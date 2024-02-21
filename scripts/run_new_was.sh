@@ -5,7 +5,7 @@ TARGET_PORT=0
 
 echo "> Current port of running WAS is ${CURRENT_PORT}."
 
-if [ ${CURRENT_PORT} -eq 8081]; then
+if [ ${CURRENT_PORT} -eq 8081 ]; then
   TARGET_PORT=8082
 elif [ ${CURRENT_PORT} -eq 8082 ]; then
   TARGET_PORT=8081
