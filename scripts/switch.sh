@@ -22,7 +22,7 @@ echo "set \$service_url http://127.0.0.1:${TARGET_PORT};" |sudo tee /home/ec2-us
 echo "> Now Nginx proxies to ${TARGET_PORT}."
 
 # Reload nginx
-sudo service nginx reload
+sudo systemctl reload nginx
 
 echo "> Nginx reloaded."
 
