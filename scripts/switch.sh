@@ -26,6 +26,6 @@ sudo systemctl reload nginx
 
 echo "> Nginx reloaded."
 
-CURRENT_PID=$(lsof -Fp -i TCP:${CURRENT_PORT} | grep -Po 'p[0-9]+' | grep -Po '[0-9]+')
+sudo kill -9 $(sudo lsof -t -i:${CURRENT_PORT})
 
-sudo kill ${CURRENT_PID}
+echo "> Kill Previous Process"
