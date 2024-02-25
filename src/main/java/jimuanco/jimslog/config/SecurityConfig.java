@@ -17,11 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.Collections;
-
+import static org.springframework.security.config.Customizer.withDefaults;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
@@ -40,17 +37,6 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**");
     }
 
-    CorsConfigurationSource corsConfigurationSource() {
-        return request -> {
-            CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedHeaders(Collections.singletonList("*"));
-            config.setAllowedMethods(Collections.singletonList("*"));
-            config.setAllowedOriginPatterns(Collections.singletonList("http://jimslog-frontend.s3-website.ap-northeast-2.amazonaws.com/"));
-            config.setAllowCredentials(true);
-            return config;
-        };
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -65,7 +51,7 @@ public class SecurityConfig {
                     e.authenticationEntryPoint(new Http401Handler(objectMapper));
                     e.accessDeniedHandler(new Http403Handler(objectMapper));
                 })
-                .cors(corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()));
+                .cors(withDefaults());
         return http.build();
     }
 
