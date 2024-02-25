@@ -42,6 +42,7 @@ jobs:
           jimslog.admin: ${{ secrets.JIMSLOG_ADMIN }}
           jimslog.s3.url: ${{ secrets.JIMSLOG_S3_URL }}
           jimslog.s3.local: ${{ secrets.JIMSLOG_S3_LOCAL }}
+          cors.client: ${{ secrets.CORS_CLIENT }}
 
       - name: Set Prod Yaml
         uses: microsoft/variable-substitution@v1

@@ -60,3 +60,6 @@ schedules :
       delete : 0 0 4 * * *
   post-images :
     limit-time : 86400
+
+cors:
+  client: ${CORS_CLIENT}
