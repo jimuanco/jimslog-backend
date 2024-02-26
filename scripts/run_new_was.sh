@@ -20,7 +20,7 @@ if [ ! -z ${TARGET_PID} ]; then
   sudo kill ${TARGET_PORT}
 fi
 
-sudo java -jar -Dserver.port=${TARGET_PORT} \
+sudo java -jar -Dserver.port=${TARGET_PORT} -Dspring.profiles.active=prod \
 /home/ec2-user/jimslog-deploy/jimslog-backend/build/libs/jimslog-0.0.1-SNAPSHOT.jar \
 > /home/ec2-user/nohup.out 2>&1 &
 echo "> Now new WAS runs at ${TARGET_PORT}."
