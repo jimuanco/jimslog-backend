@@ -8,8 +8,12 @@ spring:
     driver-class-name: org.h2.Driver
 
   jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
     properties:
       hibernate:
+        format_sql: true
         default_batch_fetch_size: 100
 
   h2:
@@ -59,19 +63,3 @@ schedules :
 
 cors:
   client: ${CORS_CLIENT}
-
----
-spring:
-  config:
-    activate:
-      on-profile:
-        - local
-        - test
-  jpa:
-    hibernate:
-      ddl-auto: create
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
