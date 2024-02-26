@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: local
   datasource:
     url: jdbc:h2:mem:jimslog
     username: sa
@@ -8,8 +8,6 @@ spring:
     driver-class-name: org.h2.Driver
 
   jpa:
-    hibernate:
-      ddl-auto: create
     properties:
       hibernate:
         default_batch_fetch_size: 100
@@ -61,3 +59,19 @@ schedules :
 
 cors:
   client: ${CORS_CLIENT}
+
+---
+spring:
+  config:
+    activate:
+      on-profile:
+        - local
+        - test
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
