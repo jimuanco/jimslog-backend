@@ -396,7 +396,6 @@ class AuthServiceTest extends IntegrationTestSupport {
         assertThat(refreshToken).isNotEqualTo(newRefreshToken);
     }
 
-    @Disabled
     @DisplayName("로그아웃한다.")
     @Test
     void logout() {
