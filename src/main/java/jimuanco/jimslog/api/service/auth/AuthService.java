@@ -155,7 +155,7 @@ public class AuthService {
 
     private void addRefreshTokenInCookie(HttpServletResponse response, String newToken, Duration duration) {
         ResponseCookie cookie = ResponseCookie.from("refreshToken", newToken)
-                .maxAge(duration)
+//                .maxAge(duration)
                 .path("/")
                 .secure(true)
                 .sameSite("None")
