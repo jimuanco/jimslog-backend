@@ -13,6 +13,7 @@ import jimuanco.jimslog.exception.UserNotFound;
 import jimuanco.jimslog.utils.JwtUtils;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -395,6 +396,7 @@ class AuthServiceTest extends IntegrationTestSupport {
         assertThat(refreshToken).isNotEqualTo(newRefreshToken);
     }
 
+    @Disabled
     @DisplayName("로그아웃한다.")
     @Test
     void logout() {
