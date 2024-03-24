@@ -8,6 +8,7 @@ import jimuanco.jimslog.api.service.post.request.PostCreateServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostEditServiceRequest;
 import jimuanco.jimslog.api.service.post.request.PostSearchServiceRequest;
 import jimuanco.jimslog.api.service.post.response.PostResponse;
+import jimuanco.jimslog.config.S3MockConfig;
 import jimuanco.jimslog.domain.menu.Menu;
 import jimuanco.jimslog.domain.menu.MenuRepository;
 import jimuanco.jimslog.domain.post.Post;
@@ -16,10 +17,7 @@ import jimuanco.jimslog.domain.post.PostImageRepository;
 import jimuanco.jimslog.domain.post.PostRepository;
 import jimuanco.jimslog.exception.MenuNotFound;
 import jimuanco.jimslog.exception.PostNotFound;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
@@ -71,6 +69,9 @@ class PostServiceTest extends IntegrationTestSupport {
 
     @BeforeEach
     public void setUp() {
+        if (S3MockConfig.port != 8001) {
+            localS3 = localS3.replace("8001", String.valueOf(S3MockConfig.port));
+        }
         amazonS3.createBucket(bucket);
     }
 
